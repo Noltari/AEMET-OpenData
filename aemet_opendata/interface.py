@@ -55,6 +55,13 @@ class AEMET:
         self.debug_api = debug_api
         return self.debug_api
 
+    # Get map of lightning strikes
+    def get_lightnings_map(self):
+        """Get map with lightning falls (last 6h)"""
+        cmd = "red/rayos/mapa"
+        data = self.api_call(cmd)
+        return data
+
     # Get specific town information
     def get_town(self, municipio):
         """Get information about specific town"""
