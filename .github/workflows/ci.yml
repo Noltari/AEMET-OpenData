@@ -34,16 +34,19 @@ jobs:
           black --check --diff aemet_opendata
 
   pylint:
-    name: Check Pylint
+    name: Check Pylint (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
 
-      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
+          python-version: ${{ matrix.python-version }}
 
       - name: Upgrade pip
         run: |
