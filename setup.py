@@ -11,7 +11,7 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
-readme = open(here('README.md')).read()
+readme = open(here('DESCRIPTION.md')).read()
 requirements = [x.strip() for x in open(here('requirements.txt')).readlines()]
 
 setup(name='AEMET-OpenData',
