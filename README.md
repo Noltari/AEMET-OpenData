@@ -36,6 +36,6 @@ Usage
 
 ```python
 from aemet_opendata.interface import AEMET
-_aemet = AEMET('my_api_key')
-municipio = _aemet.municipio(municipio="id28065")
+_aemet = AEMET(api_key="my_api_key")
+town = _aemet.get_town(municipio="id28065")
 ```

@@ -56,14 +56,14 @@ class AEMET:
         return self.debug_api
 
     # Get specific town information
-    def municipio(self, municipio):
+    def get_town(self, municipio):
         """Get information about specific town"""
         cmd = "maestro/municipio/%s" % municipio
         data = self.api_call(cmd)
         return data
 
     # Get full list of towns
-    def municipios(self):
+    def get_towns(self):
         """Get information about towns"""
         cmd = "maestro/municipios"
         data = self.api_call(cmd)
