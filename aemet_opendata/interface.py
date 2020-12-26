@@ -2,6 +2,7 @@
 """Client for the AEMET OpenData REST API."""
 
 import logging
+
 import requests
 import urllib3
 
