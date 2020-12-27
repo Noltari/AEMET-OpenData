@@ -15,14 +15,14 @@ class AEMET:
     debug_api = False
     api_url = "https://opendata.aemet.es/opendata/api"
 
-    def __init__(self, api_key, timeout=10, session=None):
+    def __init__(self, api_key, timeout=10, session=None, verify=True):
         """Init AEMET OpenData API"""
         self.headers = {"Cache-Control": "no-cache"}
         self.params = {"api_key": api_key}
         self.session = session if session else requests.Session()
         self.timeout = timeout
+        self.verify = verify
         # AEMET relies on a weak HTTPS certificate
-        self.verify = False
         urllib3.util.ssl_.DEFAULT_CIPHERS = "ALL:@SECLEVEL=1"
 
     # Private methods
@@ -55,6 +55,12 @@ class AEMET:
         """Enable/Disable API calls debugging"""
         self.debug_api = debug_api
         return self.debug_api
+
+    # Enable/Disable HTTPS verification
+    def https_verify(self, verify):
+        """Enable/Disable HTTPS verification"""
+        self.verify = verify
+        return self.verify
 
     # Get map of lightning strikes
     def get_lightnings_map(self):
