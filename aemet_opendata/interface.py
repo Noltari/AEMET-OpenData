@@ -15,7 +15,7 @@ from .const import (
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
 )
-from .helpers import parse_town_code
+from .helpers import parse_station_coordinates, parse_town_code
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -114,6 +114,41 @@ class AEMET:
         """Enable/Disable HTTPS verification"""
         self.verify = verify
         return self.verify
+
+    # Get climatological values
+    def get_climatological_values_stations(self):
+        """Get stations available for climatological values"""
+        cmd = "valores/climatologicos/inventarioestaciones/todasestaciones"
+        response = self.api_call(cmd, True)
+        return response
+
+    # Get climatological values station by coordinates
+    def get_climatological_values_station_by_coordinates(self, latitude, longitude):
+        """Get closest climatological values station to coordinates"""
+        stations = self.get_climatological_values_stations()
+        search_coords = (latitude, longitude)
+        station = None
+        distance = API_MIN_STATION_DISTANCE_KM
+        for cur_station in stations[AEMET_ATTR_DATA]:
+            station_coords = parse_station_coordinates(
+                cur_station["latitud"], cur_station["longitud"]
+            )
+            station_point = geopy.point.Point(station_coords)
+            cur_coords = (station_point.latitude, station_point.longitude)
+            cur_distance = geopy.distance.distance(search_coords, cur_coords).km
+            if cur_distance < distance:
+                distance = cur_distance
+                station = cur_station
+        if self.debug_api:
+            _LOGGER.debug("distance: %s, station: %s", distance, station)
+        return station
+
+    # Get climatological values station data
+    def get_climatological_values_station_data(self, station):
+        """Get data from climatological values station"""
+        cmd = "valores/climatologicos/inventarioestaciones/estaciones/%s" % station
+        response = self.api_call(cmd, True)
+        return response
 
     # Get conventional observation stations
     def get_conventional_observation_stations(self):
