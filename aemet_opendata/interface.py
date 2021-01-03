@@ -3,10 +3,17 @@
 
 import logging
 
+import geopy.distance
 import requests
 import urllib3
 
-from .const import AEMET_ATTR_DATA, AEMET_ATTR_RESPONSE, API_ATTR_DATA, API_URL
+from .const import (
+    AEMET_ATTR_DATA,
+    AEMET_ATTR_RESPONSE,
+    API_ATTR_DATA,
+    API_MIN_TOWN_DISTANCE_KM,
+    API_URL,
+)
 from .helpers import parse_town_code
 
 _LOGGER = logging.getLogger(__name__)
@@ -133,6 +140,23 @@ class AEMET:
         cmd = "maestro/municipio/%s" % town
         data = self.api_call(cmd)
         return data
+
+    # Get town by coordinates
+    def get_town_by_coordinates(self, latitude, longitude):
+        """Get closest town to coordinates"""
+        towns = self.get_towns()
+        search_coords = (latitude, longitude)
+        town = None
+        distance = API_MIN_TOWN_DISTANCE_KM
+        for cur_town in towns:
+            cur_coords = (cur_town["latitud_dec"], cur_town["longitud_dec"])
+            cur_distance = geopy.distance.distance(search_coords, cur_coords).km
+            if cur_distance < distance:
+                distance = cur_distance
+                town = cur_town
+        if self.debug_api:
+            _LOGGER.debug("distance: %s, town: %s", distance, town)
+        return town
 
     # Get full list of towns
     def get_towns(self):
