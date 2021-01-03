@@ -25,7 +25,7 @@ class AEMET:
         # AEMET relies on a weak HTTPS certificate
         urllib3.util.ssl_.DEFAULT_CIPHERS = "ALL:@SECLEVEL=1"
 
-    # Private methods
+    # Perform API call
     def api_call(self, cmd, fetch_data=False):
         """Perform Rest API call"""
         if self.debug_api:
@@ -64,6 +64,7 @@ class AEMET:
 
         return json_response
 
+    # Fetch API data
     def api_data(self, url):
         """Fetch API data"""
         response = self.session.request(
