@@ -26,7 +26,7 @@ class AEMET:
         urllib3.util.ssl_.DEFAULT_CIPHERS = "ALL:@SECLEVEL=1"
 
     # Private methods
-    def api_call(self, cmd):
+    def api_call(self, cmd, fetch_data=False):
         """Perform Rest API call"""
         if self.debug_api:
             _LOGGER.debug("api call: %s", cmd)
@@ -45,6 +45,38 @@ class AEMET:
             _LOGGER.debug(
                 "api call: %s, status: %s, response %s",
                 cmd,
+                response.status_code,
+                response.text,
+            )
+
+        if response.status_code != 200:
+            return None
+
+        str_response = response.text
+        if str_response is None or str_response == "":
+            return None
+
+        json_response = response.json()
+        if fetch_data and "datos" in json_response:
+            data = self.api_data(json_response["datos"])
+            if data:
+                json_response = {"response": json_response, "data": data}
+
+        return json_response
+
+    def api_data(self, url):
+        """Fetch API data"""
+        response = self.session.request(
+            "GET",
+            url,
+            verify=self.verify,
+            timeout=self.timeout,
+        )
+
+        if self.debug_api:
+            _LOGGER.debug(
+                "api data: %s, status: %s, response %s",
+                url,
                 response.status_code,
                 response.text,
             )
@@ -76,6 +108,19 @@ class AEMET:
         cmd = "red/rayos/mapa"
         data = self.api_call(cmd)
         return data
+
+    # Get specific forecast
+    def get_specific_forecast_town_daily(self, town):
+        """Get daily forecast for specific town (daily)"""
+        cmd = "prediccion/especifica/municipio/diaria/%s" % town
+        response = self.api_call(cmd, True)
+        return response
+
+    def get_specific_forecast_town_hourly(self, town):
+        """Get hourly forecast for specific town (hourly)"""
+        cmd = "prediccion/especifica/municipio/horaria/%s" % town
+        response = self.api_call(cmd, True)
+        return response
 
     # Get specific town information
     def get_town(self, municipio):
