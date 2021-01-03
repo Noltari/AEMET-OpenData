@@ -7,6 +7,7 @@ import requests
 import urllib3
 
 from .const import AEMET_ATTR_DATA, AEMET_ATTR_RESPONSE, API_ATTR_DATA, API_URL
+from .helpers import parse_town_code
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -116,13 +117,13 @@ class AEMET:
     # Get specific forecast
     def get_specific_forecast_town_daily(self, town):
         """Get daily forecast for specific town (daily)"""
-        cmd = "prediccion/especifica/municipio/diaria/%s" % town
+        cmd = "prediccion/especifica/municipio/diaria/%s" % parse_town_code(town)
         response = self.api_call(cmd, True)
         return response
 
     def get_specific_forecast_town_hourly(self, town):
         """Get hourly forecast for specific town (hourly)"""
-        cmd = "prediccion/especifica/municipio/horaria/%s" % town
+        cmd = "prediccion/especifica/municipio/horaria/%s" % parse_town_code(town)
         response = self.api_call(cmd, True)
         return response
 
