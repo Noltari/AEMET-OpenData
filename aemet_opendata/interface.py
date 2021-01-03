@@ -6,17 +6,17 @@ import logging
 import requests
 import urllib3
 
+from .const import AEMET_ATTR_DATA, AEMET_ATTR_RESPONSE, API_ATTR_DATA, API_URL
+
 _LOGGER = logging.getLogger(__name__)
 
 
 class AEMET:
     """Interacts with the AEMET OpenData API"""
 
-    debug_api = False
-    api_url = "https://opendata.aemet.es/opendata/api"
-
     def __init__(self, api_key, timeout=10, session=None, verify=True):
         """Init AEMET OpenData API"""
+        self.debug_api = False
         self.headers = {"Cache-Control": "no-cache"}
         self.params = {"api_key": api_key}
         self.session = session if session else requests.Session()
@@ -31,7 +31,7 @@ class AEMET:
         if self.debug_api:
             _LOGGER.debug("api call: %s", cmd)
 
-        url = "%s/%s" % (self.api_url, cmd)
+        url = "%s/%s" % (API_URL, cmd)
         response = self.session.request(
             "GET",
             url,
@@ -57,10 +57,13 @@ class AEMET:
             return None
 
         json_response = response.json()
-        if fetch_data and "datos" in json_response:
-            data = self.api_data(json_response["datos"])
+        if fetch_data and API_ATTR_DATA in json_response:
+            data = self.api_data(json_response[API_ATTR_DATA])
             if data:
-                json_response = {"response": json_response, "data": data}
+                json_response = {
+                    AEMET_ATTR_RESPONSE: json_response,
+                    AEMET_ATTR_DATA: data,
+                }
 
         return json_response
 
