@@ -124,9 +124,9 @@ class AEMET:
         return response
 
     # Get specific town information
-    def get_town(self, municipio):
+    def get_town(self, town):
         """Get information about specific town"""
-        cmd = "maestro/municipio/%s" % municipio
+        cmd = "maestro/municipio/%s" % town
         data = self.api_call(cmd)
         return data
 
