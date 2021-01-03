@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """AEMET OpenData Constants"""
 
 API_URL = "https://opendata.aemet.es/opendata/api"
