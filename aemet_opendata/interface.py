@@ -136,7 +136,7 @@ class AEMET:
                 distance = cur_distance
                 station = cur_station
         if self.debug_api:
-            _LOGGER.error("distance: %s, station: %s", distance, station)
+            _LOGGER.debug("distance: %s, station: %s", distance, station)
         return station
 
     # Get conventional observation station data
@@ -187,7 +187,7 @@ class AEMET:
                 distance = cur_distance
                 town = cur_town
         if self.debug_api:
-            _LOGGER.error("distance: %s, town: %s", distance, town)
+            _LOGGER.debug("distance: %s, town: %s", distance, town)
         return town
 
     # Get full list of towns
