@@ -11,6 +11,7 @@ from .const import (
     AEMET_ATTR_DATA,
     AEMET_ATTR_RESPONSE,
     API_ATTR_DATA,
+    API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
 )
@@ -114,6 +115,37 @@ class AEMET:
         self.verify = verify
         return self.verify
 
+    # Get conventional observation stations
+    def get_conventional_observation_stations(self):
+        """Get stations available for conventional observations"""
+        cmd = "observacion/convencional/todas"
+        response = self.api_call(cmd, True)
+        return response
+
+    # Get onventional observation station by coordinates
+    def get_conventional_observation_station_by_coordinates(self, latitude, longitude):
+        """Get closest conventional observation station to coordinates"""
+        stations = self.get_conventional_observation_stations()
+        search_coords = (latitude, longitude)
+        station = None
+        distance = API_MIN_STATION_DISTANCE_KM
+        for cur_station in stations[AEMET_ATTR_DATA]:
+            cur_coords = (cur_station["lat"], cur_station["lon"])
+            cur_distance = geopy.distance.distance(search_coords, cur_coords).km
+            if cur_distance < distance:
+                distance = cur_distance
+                station = cur_station
+        if self.debug_api:
+            _LOGGER.error("distance: %s, station: %s", distance, station)
+        return station
+
+    # Get conventional observation station data
+    def get_conventional_observation_station_data(self, station):
+        """Get data from conventional observation station"""
+        cmd = "observacion/convencional/datos/estacion/%s" % station
+        response = self.api_call(cmd, True)
+        return response
+
     # Get map of lightning strikes
     def get_lightnings_map(self):
         """Get map with lightning falls (last 6h)"""
@@ -155,7 +187,7 @@ class AEMET:
                 distance = cur_distance
                 town = cur_town
         if self.debug_api:
-            _LOGGER.debug("distance: %s, town: %s", distance, town)
+            _LOGGER.error("distance: %s, town: %s", distance, town)
         return town
 
     # Get full list of towns
