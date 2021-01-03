@@ -42,7 +42,15 @@ class AEMET:
         )
 
         if self.debug_api:
-            _LOGGER.debug("api call: %s, response %s", cmd, response.text)
+            _LOGGER.debug(
+                "api call: %s, status: %s, response %s",
+                cmd,
+                response.status_code,
+                response.text,
+            )
+
+        if response.status_code != 200:
+            return None
 
         str_response = response.text
         if str_response is None or str_response == "":
