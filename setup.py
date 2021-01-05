@@ -11,13 +11,11 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
-readme = open(here('DESCRIPTION.md')).read()
 requirements = [x.strip() for x in open(here('requirements.txt')).readlines()]
 
 setup(name='AEMET-OpenData',
       version='0.0.5',
       description='AEMET OpenData Rest API library',
-      long_description=readme,
       keywords='aemet',
       author='noltari',
       author_email='noltari@gmail.com',
