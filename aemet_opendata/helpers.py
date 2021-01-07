@@ -1,7 +1,37 @@
 # -*- coding: utf-8 -*-
 """AEMET OpenData Helpers"""
 
-from .const import API_ID_PFX
+from .const import (
+    AEMET_ATTR_PERIOD,
+    AEMET_ATTR_VALUE,
+    API_ID_PFX,
+    API_PERIOD_24H,
+    API_PERIOD_SPLIT,
+)
+
+
+def get_forecast_hour_value(values, hour: int):
+    """Get hour value from forecast"""
+    for value in values:
+        if int(value[AEMET_ATTR_PERIOD]) == hour:
+            return None if not value[AEMET_ATTR_VALUE] else value[AEMET_ATTR_VALUE]
+    return None
+
+
+def get_forecast_interval_value(values, hour: int):
+    """Get hour value from forecast interval"""
+    for value in values:
+        period_start = int(value[AEMET_ATTR_PERIOD][0:API_PERIOD_SPLIT])
+        period_end = int(
+            value[AEMET_ATTR_PERIOD][API_PERIOD_SPLIT : API_PERIOD_SPLIT * 2]
+        )
+        if period_end < period_start:
+            period_end = period_end + API_PERIOD_24H
+            if hour == 0:
+                hour = hour + API_PERIOD_24H
+        if period_start <= hour < period_end:
+            return None if not value[AEMET_ATTR_VALUE] else value[AEMET_ATTR_VALUE]
+    return None
 
 
 def split_coordinate(coordinate):
