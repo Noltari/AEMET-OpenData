@@ -9,7 +9,6 @@ import urllib3
 
 from .const import (
     AEMET_ATTR_DATA,
-    AEMET_ATTR_IDEMA,
     AEMET_ATTR_STATION_LATITUDE,
     AEMET_ATTR_STATION_LONGITUDE,
     AEMET_ATTR_TOWN_LATITUDE_DECIMAL,
@@ -184,17 +183,6 @@ class AEMET:
         if self.debug_api:
             _LOGGER.debug("distance: %s, station: %s", distance, station)
         return station
-
-    # Get conventional observation station data by ID
-    def get_conventional_observation_station_latest_data(self, station_id):
-        """Get latest conventional observation station data by ID"""
-        stations = self.get_conventional_observation_stations()
-        for cur_station in stations[ATTR_DATA]:
-            if cur_station[AEMET_ATTR_IDEMA] == station_id:
-                if self.debug_api:
-                    _LOGGER.debug("station: %s", cur_station)
-                return cur_station
-        return None
 
     # Get conventional observation station data
     def get_conventional_observation_station_data(self, station):
