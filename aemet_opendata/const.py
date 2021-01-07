@@ -4,6 +4,7 @@
 AEMET_ATTR_DATA = "datos"
 AEMET_ATTR_DATE = "fecha"
 AEMET_ATTR_HUMIDITY = "humedadRelativa"
+AEMET_ATTR_IDEMA = "idema"
 AEMET_ATTR_PERIOD = "periodo"
 AEMET_ATTR_PRECIPITATION = "precipitacion"
 AEMET_ATTR_PRECIPITATION_PROBABILITY = "probPrecipitacion"
