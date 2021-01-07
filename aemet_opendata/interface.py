@@ -9,11 +9,11 @@ import urllib3
 
 from .const import (
     AEMET_ATTR_DATA,
-    AEMET_ATTR_RESPONSE,
-    API_ATTR_DATA,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
+    ATTR_DATA,
+    ATTR_RESPONSE,
 )
 from .helpers import parse_station_coordinates, parse_town_code
 
@@ -66,12 +66,12 @@ class AEMET:
             return None
 
         json_response = response.json()
-        if fetch_data and API_ATTR_DATA in json_response:
-            data = self.api_data(json_response[API_ATTR_DATA])
+        if fetch_data and AEMET_ATTR_DATA in json_response:
+            data = self.api_data(json_response[AEMET_ATTR_DATA])
             if data:
                 json_response = {
-                    AEMET_ATTR_RESPONSE: json_response,
-                    AEMET_ATTR_DATA: data,
+                    ATTR_RESPONSE: json_response,
+                    ATTR_DATA: data,
                 }
 
         return json_response
@@ -129,7 +129,7 @@ class AEMET:
         search_coords = (latitude, longitude)
         station = None
         distance = API_MIN_STATION_DISTANCE_KM
-        for cur_station in stations[AEMET_ATTR_DATA]:
+        for cur_station in stations[ATTR_DATA]:
             station_coords = parse_station_coordinates(
                 cur_station["latitud"], cur_station["longitud"]
             )
@@ -164,7 +164,7 @@ class AEMET:
         search_coords = (latitude, longitude)
         station = None
         distance = API_MIN_STATION_DISTANCE_KM
-        for cur_station in stations[AEMET_ATTR_DATA]:
+        for cur_station in stations[ATTR_DATA]:
             cur_coords = (cur_station["lat"], cur_station["lon"])
             cur_distance = geopy.distance.distance(search_coords, cur_coords).km
             if cur_distance < distance:
