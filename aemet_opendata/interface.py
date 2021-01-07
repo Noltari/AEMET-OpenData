@@ -10,6 +10,12 @@ import urllib3
 from .const import (
     AEMET_ATTR_DATA,
     AEMET_ATTR_IDEMA,
+    AEMET_ATTR_STATION_LATITUDE,
+    AEMET_ATTR_STATION_LONGITUDE,
+    AEMET_ATTR_TOWN_LATITUDE_DECIMAL,
+    AEMET_ATTR_TOWN_LONGITUDE_DECIMAL,
+    AEMET_ATTR_WEATHER_STATION_LATITUDE,
+    AEMET_ATTR_WEATHER_STATION_LONGITUDE,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
@@ -132,7 +138,8 @@ class AEMET:
         distance = API_MIN_STATION_DISTANCE_KM
         for cur_station in stations[ATTR_DATA]:
             station_coords = parse_station_coordinates(
-                cur_station["latitud"], cur_station["longitud"]
+                cur_station[AEMET_ATTR_WEATHER_STATION_LATITUDE],
+                cur_station[AEMET_ATTR_WEATHER_STATION_LONGITUDE],
             )
             station_point = geopy.point.Point(station_coords)
             cur_coords = (station_point.latitude, station_point.longitude)
@@ -166,7 +173,10 @@ class AEMET:
         station = None
         distance = API_MIN_STATION_DISTANCE_KM
         for cur_station in stations[ATTR_DATA]:
-            cur_coords = (cur_station["lat"], cur_station["lon"])
+            cur_coords = (
+                cur_station[AEMET_ATTR_STATION_LATITUDE],
+                cur_station[AEMET_ATTR_STATION_LONGITUDE],
+            )
             cur_distance = geopy.distance.distance(search_coords, cur_coords).km
             if cur_distance < distance:
                 distance = cur_distance
@@ -228,7 +238,10 @@ class AEMET:
         town = None
         distance = API_MIN_TOWN_DISTANCE_KM
         for cur_town in towns:
-            cur_coords = (cur_town["latitud_dec"], cur_town["longitud_dec"])
+            cur_coords = (
+                cur_town[AEMET_ATTR_TOWN_LATITUDE_DECIMAL],
+                cur_town[AEMET_ATTR_TOWN_LONGITUDE_DECIMAL],
+            )
             cur_distance = geopy.distance.distance(search_coords, cur_coords).km
             if cur_distance < distance:
                 distance = cur_distance
