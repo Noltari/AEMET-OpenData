@@ -10,17 +10,21 @@ from .const import (
 )
 
 
-def get_forecast_hour_value(values, hour: int):
+def get_forecast_hour_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
     """Get hour value from forecast"""
     for value in values:
+        if key not in value:
+            continue
         if int(value[AEMET_ATTR_PERIOD]) == hour:
-            return None if not value[AEMET_ATTR_VALUE] else value[AEMET_ATTR_VALUE]
+            return None if not value[key] else value[key]
     return None
 
 
-def get_forecast_interval_value(values, hour: int):
+def get_forecast_interval_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
     """Get hour value from forecast interval"""
     for value in values:
+        if key not in value:
+            continue
         period_start = int(value[AEMET_ATTR_PERIOD][0:API_PERIOD_SPLIT])
         period_end = int(
             value[AEMET_ATTR_PERIOD][API_PERIOD_SPLIT : API_PERIOD_SPLIT * 2]
@@ -30,7 +34,7 @@ def get_forecast_interval_value(values, hour: int):
             if hour == 0:
                 hour = hour + API_PERIOD_24H
         if period_start <= hour < period_end:
-            return None if not value[AEMET_ATTR_VALUE] else value[AEMET_ATTR_VALUE]
+            return None if not value[key] else value[key]
     return None
 
 
