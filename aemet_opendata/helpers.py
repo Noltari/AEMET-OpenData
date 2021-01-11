@@ -6,8 +6,27 @@ from .const import (
     AEMET_ATTR_VALUE,
     API_ID_PFX,
     API_PERIOD_24H,
+    API_PERIOD_FULL_DAY,
     API_PERIOD_SPLIT,
 )
+
+
+def get_forecast_day_value(values, key: str = AEMET_ATTR_VALUE):
+    """Get day value from forecast"""
+    if isinstance(values, list):
+        if len(values) > 1:
+            for value in values:
+                if key not in value:
+                    continue
+                if value[AEMET_ATTR_PERIOD] == API_PERIOD_FULL_DAY:
+                    return value[key]
+        else:
+            if key in values[0]:
+                return values[0][key]
+    if isinstance(values, dict):
+        if key in values:
+            return values[key]
+    return None
 
 
 def get_forecast_hour_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
