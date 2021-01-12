@@ -122,10 +122,10 @@ class AEMET:
         return self.verify
 
     # Get climatological values
-    def get_climatological_values_stations(self):
+    def get_climatological_values_stations(self, fetch_data=True):
         """Get stations available for climatological values"""
         cmd = "valores/climatologicos/inventarioestaciones/todasestaciones"
-        response = self.api_call(cmd, True)
+        response = self.api_call(cmd, fetch_data)
         return response
 
     # Get climatological values station by coordinates
@@ -151,17 +151,17 @@ class AEMET:
         return station
 
     # Get climatological values station data
-    def get_climatological_values_station_data(self, station):
+    def get_climatological_values_station_data(self, station, fetch_data=True):
         """Get data from climatological values station"""
         cmd = "valores/climatologicos/inventarioestaciones/estaciones/%s" % station
-        response = self.api_call(cmd, True)
+        response = self.api_call(cmd, fetch_data)
         return response
 
     # Get conventional observation stations
-    def get_conventional_observation_stations(self):
+    def get_conventional_observation_stations(self, fetch_data=True):
         """Get stations available for conventional observations"""
         cmd = "observacion/convencional/todas"
-        response = self.api_call(cmd, True)
+        response = self.api_call(cmd, fetch_data)
         return response
 
     # Get conventional observation station by coordinates
@@ -185,10 +185,10 @@ class AEMET:
         return station
 
     # Get conventional observation station data
-    def get_conventional_observation_station_data(self, station):
+    def get_conventional_observation_station_data(self, station, fetch_data=True):
         """Get data from conventional observation station"""
         cmd = "observacion/convencional/datos/estacion/%s" % station
-        response = self.api_call(cmd, True)
+        response = self.api_call(cmd, fetch_data)
         return response
 
     # Get map of lightning strikes
@@ -199,16 +199,16 @@ class AEMET:
         return data
 
     # Get specific forecast
-    def get_specific_forecast_town_daily(self, town):
+    def get_specific_forecast_town_daily(self, town, fetch_data=True):
         """Get daily forecast for specific town (daily)"""
         cmd = "prediccion/especifica/municipio/diaria/%s" % parse_town_code(town)
-        response = self.api_call(cmd, True)
+        response = self.api_call(cmd, fetch_data)
         return response
 
-    def get_specific_forecast_town_hourly(self, town):
+    def get_specific_forecast_town_hourly(self, town, fetch_data=True):
         """Get hourly forecast for specific town (hourly)"""
         cmd = "prediccion/especifica/municipio/horaria/%s" % parse_town_code(town)
-        response = self.api_call(cmd, True)
+        response = self.api_call(cmd, fetch_data)
         return response
 
     # Get specific town information
