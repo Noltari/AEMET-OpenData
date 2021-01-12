@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""AEMET OpenData Constants"""
+"""AEMET OpenData Constants."""
 
 AEMET_ATTR_DATA = "datos"
 AEMET_ATTR_DATE = "fecha"
@@ -7,6 +7,7 @@ AEMET_ATTR_DAY = "dia"
 AEMET_ATTR_DIRECTION = "direccion"
 AEMET_ATTR_ELABORATED = "elaborado"
 AEMET_ATTR_FORECAST = "prediccion"
+AEMET_ATTR_GUST = "rachaMax"
 AEMET_ATTR_HUMIDITY = "humedadRelativa"
 AEMET_ATTR_ID = "id"
 AEMET_ATTR_IDEMA = "idema"

@@ -27,10 +27,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AEMET:
-    """Interacts with the AEMET OpenData API"""
+    """Interacts with the AEMET OpenData API."""
 
     def __init__(self, api_key, timeout=10, session=None, verify=True):
-        """Init AEMET OpenData API"""
+        """Init AEMET OpenData API."""
         self.debug_api = False
         self.headers = {"Cache-Control": "no-cache"}
         self.params = {"api_key": api_key}
@@ -42,7 +42,7 @@ class AEMET:
 
     # Perform API call
     def api_call(self, cmd, fetch_data=False):
-        """Perform Rest API call"""
+        """Perform Rest API call."""
         if self.debug_api:
             _LOGGER.debug("api call: %s", cmd)
 
@@ -84,7 +84,7 @@ class AEMET:
 
     # Fetch API data
     def api_data(self, url):
-        """Fetch API data"""
+        """Fetch API data."""
         response = self.session.request(
             "GET",
             url,
@@ -111,26 +111,26 @@ class AEMET:
 
     # Enable/Disable API calls debugging
     def api_debugging(self, debug_api):
-        """Enable/Disable API calls debugging"""
+        """Enable/Disable API calls debugging."""
         self.debug_api = debug_api
         return self.debug_api
 
     # Enable/Disable HTTPS verification
     def https_verify(self, verify):
-        """Enable/Disable HTTPS verification"""
+        """Enable/Disable HTTPS verification."""
         self.verify = verify
         return self.verify
 
     # Get climatological values
     def get_climatological_values_stations(self, fetch_data=True):
-        """Get stations available for climatological values"""
+        """Get stations available for climatological values."""
         cmd = "valores/climatologicos/inventarioestaciones/todasestaciones"
         response = self.api_call(cmd, fetch_data)
         return response
 
     # Get climatological values station by coordinates
     def get_climatological_values_station_by_coordinates(self, latitude, longitude):
-        """Get closest climatological values station to coordinates"""
+        """Get closest climatological values station to coordinates."""
         stations = self.get_climatological_values_stations()
         search_coords = (latitude, longitude)
         station = None
@@ -152,21 +152,21 @@ class AEMET:
 
     # Get climatological values station data
     def get_climatological_values_station_data(self, station, fetch_data=True):
-        """Get data from climatological values station"""
+        """Get data from climatological values station."""
         cmd = "valores/climatologicos/inventarioestaciones/estaciones/%s" % station
         response = self.api_call(cmd, fetch_data)
         return response
 
     # Get conventional observation stations
     def get_conventional_observation_stations(self, fetch_data=True):
-        """Get stations available for conventional observations"""
+        """Get stations available for conventional observations."""
         cmd = "observacion/convencional/todas"
         response = self.api_call(cmd, fetch_data)
         return response
 
     # Get conventional observation station by coordinates
     def get_conventional_observation_station_by_coordinates(self, latitude, longitude):
-        """Get closest conventional observation station to coordinates"""
+        """Get closest conventional observation station to coordinates."""
         stations = self.get_conventional_observation_stations()
         search_coords = (latitude, longitude)
         station = None
@@ -186,41 +186,41 @@ class AEMET:
 
     # Get conventional observation station data
     def get_conventional_observation_station_data(self, station, fetch_data=True):
-        """Get data from conventional observation station"""
+        """Get data from conventional observation station."""
         cmd = "observacion/convencional/datos/estacion/%s" % station
         response = self.api_call(cmd, fetch_data)
         return response
 
     # Get map of lightning strikes
     def get_lightnings_map(self):
-        """Get map with lightning falls (last 6h)"""
+        """Get map with lightning falls (last 6h)."""
         cmd = "red/rayos/mapa"
         data = self.api_call(cmd)
         return data
 
     # Get specific forecast
     def get_specific_forecast_town_daily(self, town, fetch_data=True):
-        """Get daily forecast for specific town (daily)"""
+        """Get daily forecast for specific town (daily)."""
         cmd = "prediccion/especifica/municipio/diaria/%s" % parse_town_code(town)
         response = self.api_call(cmd, fetch_data)
         return response
 
     def get_specific_forecast_town_hourly(self, town, fetch_data=True):
-        """Get hourly forecast for specific town (hourly)"""
+        """Get hourly forecast for specific town (hourly)."""
         cmd = "prediccion/especifica/municipio/horaria/%s" % parse_town_code(town)
         response = self.api_call(cmd, fetch_data)
         return response
 
     # Get specific town information
     def get_town(self, town):
-        """Get information about specific town"""
+        """Get information about specific town."""
         cmd = "maestro/municipio/%s" % town
         data = self.api_call(cmd)
         return data
 
     # Get town by coordinates
     def get_town_by_coordinates(self, latitude, longitude):
-        """Get closest town to coordinates"""
+        """Get closest town to coordinates."""
         towns = self.get_towns()
         search_coords = (latitude, longitude)
         town = None
@@ -240,7 +240,7 @@ class AEMET:
 
     # Get full list of towns
     def get_towns(self):
-        """Get information about towns"""
+        """Get information about towns."""
         cmd = "maestro/municipios"
         data = self.api_call(cmd)
         return data

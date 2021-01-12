@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""AEMET OpenData Helpers"""
+"""AEMET OpenData Helpers."""
 
 from .const import (
     AEMET_ATTR_PERIOD,
@@ -12,7 +12,7 @@ from .const import (
 
 
 def get_forecast_day_value(values, key: str = AEMET_ATTR_VALUE):
-    """Get day value from forecast"""
+    """Get day value from forecast."""
     if isinstance(values, list):
         if len(values) > 1:
             for value in values:
@@ -30,7 +30,7 @@ def get_forecast_day_value(values, key: str = AEMET_ATTR_VALUE):
 
 
 def get_forecast_hour_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
-    """Get hour value from forecast"""
+    """Get hour value from forecast."""
     for value in values:
         if key not in value:
             continue
@@ -40,7 +40,7 @@ def get_forecast_hour_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
 
 
 def get_forecast_interval_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
-    """Get hour value from forecast interval"""
+    """Get hour value from forecast interval."""
     for value in values:
         if key not in value:
             continue
@@ -58,7 +58,7 @@ def get_forecast_interval_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
 
 
 def split_coordinate(coordinate):
-    """Split climatological values station coordinate"""
+    """Split climatological values station coordinate."""
     coord_deg = coordinate[0:2]
     coord_min = coordinate[2:4]
     coord_sec = coordinate[4:6]
@@ -67,12 +67,12 @@ def split_coordinate(coordinate):
 
 
 def parse_station_coordinates(latitude, longitude):
-    """Parses climatological values station coordinates"""
+    """Parse climatological values station coordinates."""
     return "%s %s" % (split_coordinate(latitude), split_coordinate(longitude))
 
 
 def parse_town_code(town_id):
-    """Parses town code from ID if needed"""
+    """Parse town code from ID if needed."""
     if isinstance(town_id, str) and town_id.startswith(API_ID_PFX):
         return town_id[len(API_ID_PFX) :]
     return town_id
