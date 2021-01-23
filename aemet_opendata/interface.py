@@ -48,18 +48,22 @@ class AEMET:
             _LOGGER.debug("api call: %s", cmd)
 
         url = "%s/%s" % (API_URL, cmd)
-        response = self.session.request(
-            "GET",
-            url,
-            verify=self.verify,
-            timeout=self.timeout,
-            headers=self.headers,
-            params=self.params,
-        )
+        try:
+            response = self.session.request(
+                "GET",
+                url,
+                verify=self.verify,
+                timeout=self.timeout,
+                headers=self.headers,
+                params=self.params,
+            )
+        except requests.exceptions.RequestException as req_exc:
+            _LOGGER.error("api_call exception: %s", req_exc)
+            return None
 
         if self.debug_api:
             _LOGGER.debug(
-                "api call: %s, status: %s, response %s",
+                "api_call: %s, status: %s, response %s",
                 cmd,
                 response.status_code,
                 response.text,
@@ -86,16 +90,20 @@ class AEMET:
     # Fetch API data
     def api_data(self, url):
         """Fetch API data."""
-        response = self.session.request(
-            "GET",
-            url,
-            verify=self.verify,
-            timeout=self.timeout,
-        )
+        try:
+            response = self.session.request(
+                "GET",
+                url,
+                verify=self.verify,
+                timeout=self.timeout,
+            )
+        except requests.exceptions.RequestException as req_exc:
+            _LOGGER.error("api_data exception: %s", req_exc)
+            return None
 
         if self.debug_api:
             _LOGGER.debug(
-                "api data: %s, status: %s, response %s",
+                "api_data: %s, status: %s, response %s",
                 url,
                 response.status_code,
                 response.text,
