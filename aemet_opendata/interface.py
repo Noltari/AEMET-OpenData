@@ -17,6 +17,7 @@ from .const import (
     AEMET_ATTR_WEATHER_STATION_LONGITUDE,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
+    API_TIMEOUT,
     API_URL,
     ATTR_DATA,
     ATTR_RESPONSE,
@@ -29,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 class AEMET:
     """Interacts with the AEMET OpenData API."""
 
-    def __init__(self, api_key, timeout=10, session=None, verify=True):
+    def __init__(self, api_key, timeout=API_TIMEOUT, session=None, verify=True):
         """Init AEMET OpenData API."""
         self.debug_api = False
         self.headers = {"Cache-Control": "no-cache"}

@@ -56,6 +56,7 @@ API_MIN_TOWN_DISTANCE_KM = 40
 API_PERIOD_24H = 24
 API_PERIOD_FULL_DAY = "00-24"
 API_PERIOD_SPLIT = 2
+API_TIMEOUT = 15
 API_URL = "https://opendata.aemet.es/opendata/api"
 
 ATTR_DATA = "data"
