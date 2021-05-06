@@ -14,7 +14,7 @@ if sys.argv[-1] == 'publish':
 requirements = [x.strip() for x in open(here('requirements.txt')).readlines()]
 
 setup(name='AEMET-OpenData',
-      version='0.1.8',
+      version='0.2.0',
       description='AEMET OpenData Rest API library',
       keywords='aemet',
       author='noltari',
