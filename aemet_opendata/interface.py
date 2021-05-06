@@ -33,6 +33,7 @@ class AEMET:
     def __init__(self, api_key, timeout=API_TIMEOUT, session=None, verify=True):
         """Init AEMET OpenData API."""
         self.debug_api = False
+        self.dist_hp = False
         self.headers = {"Cache-Control": "no-cache"}
         self.params = {"api_key": api_key}
         self.session = session if session else requests.Session()
@@ -124,6 +125,19 @@ class AEMET:
         self.debug_api = debug_api
         return self.debug_api
 
+    # Calculate distance between 2 points
+    def calc_distance(self, start, end):
+        """Calculate distance between 2 points."""
+        if self.dist_hp:
+            return geopy.distance.geodesic(start, end)
+        return geopy.distance.great_circle(start, end)
+
+    # Enable/Disable high precision for distance calculations
+    def distance_high_precision(self, dist_hp):
+        """Enable/Disable high precision for distance calculations."""
+        self.dist_hp = dist_hp
+        return self.dist_hp
+
     # Enable/Disable HTTPS verification
     def https_verify(self, verify):
         """Enable/Disable HTTPS verification."""
@@ -151,7 +165,7 @@ class AEMET:
             )
             station_point = geopy.point.Point(station_coords)
             cur_coords = (station_point.latitude, station_point.longitude)
-            cur_distance = geopy.distance.distance(search_coords, cur_coords).km
+            cur_distance = self.calc_distance(search_coords, cur_coords).km
             if cur_distance < distance:
                 distance = cur_distance
                 station = cur_station
@@ -185,7 +199,7 @@ class AEMET:
                 cur_station[AEMET_ATTR_STATION_LATITUDE],
                 cur_station[AEMET_ATTR_STATION_LONGITUDE],
             )
-            cur_distance = geopy.distance.distance(search_coords, cur_coords).km
+            cur_distance = self.calc_distance(search_coords, cur_coords).km
             if cur_distance < distance:
                 distance = cur_distance
                 station = cur_station
@@ -239,7 +253,7 @@ class AEMET:
                 cur_town[AEMET_ATTR_TOWN_LATITUDE_DECIMAL],
                 cur_town[AEMET_ATTR_TOWN_LONGITUDE_DECIMAL],
             )
-            cur_distance = geopy.distance.distance(search_coords, cur_coords).km
+            cur_distance = self.calc_distance(search_coords, cur_coords).km
             if cur_distance < distance:
                 distance = cur_distance
                 town = cur_town
