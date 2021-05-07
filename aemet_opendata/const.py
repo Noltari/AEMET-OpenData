@@ -61,4 +61,3 @@ API_URL = "https://opendata.aemet.es/opendata/api"
 
 ATTR_DATA = "data"
 ATTR_RESPONSE = "response"
-ATTR_URL = "url"

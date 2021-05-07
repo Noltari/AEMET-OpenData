@@ -21,7 +21,6 @@ from .const import (
     API_URL,
     ATTR_DATA,
     ATTR_RESPONSE,
-    ATTR_URL,
 )
 from .helpers import parse_station_coordinates, parse_town_code
 
@@ -31,10 +30,8 @@ _LOGGER = logging.getLogger(__name__)
 class AEMET:
     """Interacts with the AEMET OpenData API."""
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(self, api_key, timeout=API_TIMEOUT, session=None, verify=True):
         """Init AEMET OpenData API."""
-        self.data_cache = {}
         self.debug_api = False
         self.dist_hp = False
         self.headers = {"Cache-Control": "no-cache"}
@@ -82,18 +79,7 @@ class AEMET:
 
         json_response = response.json()
         if fetch_data and AEMET_ATTR_DATA in json_response:
-            if (
-                cmd in self.data_cache
-                and self.data_cache[cmd][ATTR_URL] == json_response[AEMET_ATTR_DATA]
-            ):
-                data = self.data_cache[cmd][ATTR_DATA]
-            else:
-                data = self.api_data(json_response[AEMET_ATTR_DATA])
-                if data:
-                    self.data_cache[cmd] = {
-                        ATTR_DATA: self.api_data(json_response[AEMET_ATTR_DATA]),
-                        ATTR_URL: json_response[AEMET_ATTR_DATA],
-                    }
+            data = self.api_data(json_response[AEMET_ATTR_DATA])
             if data:
                 json_response = {
                     ATTR_RESPONSE: json_response,
