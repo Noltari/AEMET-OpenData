@@ -37,5 +37,5 @@ Usage
 ```python
 from aemet_opendata.interface import AEMET
 _aemet = AEMET(api_key="my_api_key")
-town = _aemet.get_town(municipio="id28065")
+town = _aemet.get_town(town="id28065")
 ```
