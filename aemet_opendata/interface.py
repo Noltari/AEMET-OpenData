@@ -48,7 +48,7 @@ class AEMET:
         if self.debug_api:
             _LOGGER.debug("api call: %s", cmd)
 
-        url = "%s/%s" % (API_URL, cmd)
+        url = f"{API_URL}/{cmd}"
         try:
             response = self.session.request(
                 "GET",
@@ -176,7 +176,7 @@ class AEMET:
     # Get climatological values station data
     def get_climatological_values_station_data(self, station, fetch_data=True):
         """Get data from climatological values station."""
-        cmd = "valores/climatologicos/inventarioestaciones/estaciones/%s" % station
+        cmd = f"valores/climatologicos/inventarioestaciones/estaciones/{station}"
         response = self.api_call(cmd, fetch_data)
         return response
 
@@ -210,7 +210,7 @@ class AEMET:
     # Get conventional observation station data
     def get_conventional_observation_station_data(self, station, fetch_data=True):
         """Get data from conventional observation station."""
-        cmd = "observacion/convencional/datos/estacion/%s" % station
+        cmd = f"observacion/convencional/datos/estacion/{station}"
         response = self.api_call(cmd, fetch_data)
         return response
 
@@ -224,20 +224,20 @@ class AEMET:
     # Get specific forecast
     def get_specific_forecast_town_daily(self, town, fetch_data=True):
         """Get daily forecast for specific town (daily)."""
-        cmd = "prediccion/especifica/municipio/diaria/%s" % parse_town_code(town)
+        cmd = f"prediccion/especifica/municipio/diaria/{parse_town_code(town)}"
         response = self.api_call(cmd, fetch_data)
         return response
 
     def get_specific_forecast_town_hourly(self, town, fetch_data=True):
         """Get hourly forecast for specific town (hourly)."""
-        cmd = "prediccion/especifica/municipio/horaria/%s" % parse_town_code(town)
+        cmd = f"prediccion/especifica/municipio/horaria/{parse_town_code(town)}"
         response = self.api_call(cmd, fetch_data)
         return response
 
     # Get specific town information
     def get_town(self, town):
         """Get information about specific town."""
-        cmd = "maestro/municipio/%s" % town
+        cmd = f"maestro/municipio/{town}"
         data = self.api_call(cmd)
         return data
 

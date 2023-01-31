@@ -63,12 +63,12 @@ def split_coordinate(coordinate):
     coord_min = coordinate[2:4]
     coord_sec = coordinate[4:6]
     coord_dir = coordinate[6:7]
-    return "%s %sm %ss %s" % (coord_deg, coord_min, coord_sec, coord_dir)
+    return f"{coord_deg} {coord_min}m {coord_sec}s {coord_dir}"
 
 
 def parse_station_coordinates(latitude, longitude):
     """Parse climatological values station coordinates."""
-    return "%s %s" % (split_coordinate(latitude), split_coordinate(longitude))
+    return f"{split_coordinate(latitude)} {split_coordinate(longitude)}"
 
 
 def parse_town_code(town_id):
