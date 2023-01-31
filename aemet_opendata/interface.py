@@ -5,7 +5,6 @@ import logging
 
 import geopy.distance
 import requests
-import urllib3
 
 from .const import (
     AEMET_ATTR_DATA,
@@ -39,8 +38,6 @@ class AEMET:
         self.session = session if session else requests.Session()
         self.timeout = timeout
         self.verify = verify
-        # AEMET relies on a weak HTTPS certificate
-        urllib3.util.ssl_.DEFAULT_CIPHERS = "ALL:@SECLEVEL=1"
 
     # Perform API call
     def api_call(self, cmd, fetch_data=False):
