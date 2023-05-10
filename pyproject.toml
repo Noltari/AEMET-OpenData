@@ -1,0 +1,39 @@
+[project]
+name = "AEMET-OpenData"
+version = "0.2.2"
+description = "AEMET OpenData Rest API library"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "GPL-2.0-only"}
+keywords = ["AEMET", "weather", "forecast", "home"] 
+authors = [
+  {name = "Álvaro Fernández Rojas", email = "noltari@gmail.com" }
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Home Automation",
+]
+dependencies = [
+  "geopy",
+  "requests",
+  "urllib3"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Noltari/AEMET-OpenData"
+"Bug Tracker" = "https://github.com/Noltari/AEMET-OpenData/issues"
+
+[tool.setuptools]
+platforms = ["any"]
+zip-safe = false
+include-package-data = true
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
