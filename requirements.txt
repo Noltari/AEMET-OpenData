@@ -1,4 +1,3 @@
+aiohttp
 geopy
-requests
-types-requests
 urllib3

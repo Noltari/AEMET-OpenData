@@ -1,5 +1,4 @@
-AEMET OpenData Python API
-=========================
+# AEMET OpenData Python API
 
 [![Latest Version][mdversion-button]][md-pypi]
 [![Python Versions][pyversion-button]][md-pypi]
@@ -12,8 +11,7 @@ AEMET OpenData Python API
 
 Python client for the AEMET OpenData Rest API.
 
-Description
------------
+## Description
 
 AEMET-OpenData is a Python module implementing an interface to the AEMET OpenData Rest API.<br/>
 It allows a user to gather all the public weather information from AEMET (Agencia Estatal de Meteorología).
@@ -22,8 +20,7 @@ Documentation for the AEMET OpenData Rest API is available at https://opendata.a
 
 This package has been developed to be used with [Home-Assistant](https://home-assistant.io/) but it can be used in other contexts.
 
-Disclaimer
-----------
+## Disclaimer
 
 AEMET-OpenData was created for my own use, and for others who may wish to experiment with personal Internet of Things systems.
 
@@ -31,11 +28,19 @@ I have no connection with AEMET. I receive no help (financial or otherwise) from
 
 This software is provided without warranty, according to the GNU Public Licence version 2, and should therefore not be used where it may endanger life, financial stakes, or cause discomfort and inconvenience to others.
 
-Usage
------
+## Requirements
+- Python >= 3.11
 
-```python
-from aemet_opendata.interface import AEMET
-_aemet = AEMET(api_key="my_api_key")
-town = _aemet.get_town(town="id28065")
+## Install
+```bash
+pip install aioairzone-cloud
 ```
+
+## Install from Source
+Run the following command inside this folder
+```bash
+pip install --upgrade .
+```
+
+## Examples
+Examples can be found in the `examples` folder

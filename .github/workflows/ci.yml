@@ -33,6 +33,10 @@ jobs:
         run: |
           black --check --diff aemet_opendata
 
+      - name: Run Black on examples
+        run: |
+          black --check --diff examples
+
   pylint:
     name: Check Pylint (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -64,6 +68,14 @@ jobs:
       - name: Run Pylint
         run: |
           pylint aemet_opendata
+
+      - name: Install aemet_opendata
+        run: |
+          pip install --upgrade .
+
+      - name: Run Pylint on examples
+        run: |
+          pylint examples
 
   mypy:
     name: Check Mypy (Python ${{ matrix.python-version }})
@@ -97,6 +109,14 @@ jobs:
         run: |
           mypy --strict aemet_opendata
 
+      - name: Install aemet_opendata
+        run: |
+          pip install --upgrade .
+
+      - name: Run Mypy on examples
+        run: |
+          mypy --check-untyped-defs examples
+
   ruff:
     name: Check ruff
     runs-on: ubuntu-latest
@@ -121,3 +141,7 @@ jobs:
       - name: Run ruff
         run: |
           ruff check aemet_opendata
+
+      - name: Run ruff on examples
+        run: |
+          ruff check examples
