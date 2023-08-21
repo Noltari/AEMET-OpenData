@@ -1,3 +1,4 @@
 geopy
 requests
+types-requests
 urllib3

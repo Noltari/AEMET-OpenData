@@ -32,6 +32,9 @@ platforms = ["any"]
 zip-safe = false
 include-package-data = true
 
+[tool.setuptools.package-data]
+"aemet_opendata" = ["py.typed"]
+
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"

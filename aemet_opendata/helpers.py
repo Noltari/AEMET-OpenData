@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """AEMET OpenData Helpers."""
 
+from typing import Any
+
 from .const import (
     AEMET_ATTR_PERIOD,
     AEMET_ATTR_VALUE,
@@ -11,7 +13,9 @@ from .const import (
 )
 
 
-def get_forecast_day_value(values, key: str = AEMET_ATTR_VALUE):
+def get_forecast_day_value(
+    values: dict[str, Any] | list[Any], key: str = AEMET_ATTR_VALUE
+) -> Any:
     """Get day value from forecast."""
     if isinstance(values, list):
         if len(values) > 1:
@@ -29,7 +33,7 @@ def get_forecast_day_value(values, key: str = AEMET_ATTR_VALUE):
     return None
 
 
-def get_forecast_hour_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
+def get_forecast_hour_value(values: Any, hour: int, key: str = AEMET_ATTR_VALUE) -> Any:
     """Get hour value from forecast."""
     for value in values:
         if key not in value:
@@ -39,7 +43,9 @@ def get_forecast_hour_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
     return None
 
 
-def get_forecast_interval_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
+def get_forecast_interval_value(
+    values: Any, hour: int, key: str = AEMET_ATTR_VALUE
+) -> Any:
     """Get hour value from forecast interval."""
     for value in values:
         if key not in value:
@@ -57,7 +63,7 @@ def get_forecast_interval_value(values, hour: int, key: str = AEMET_ATTR_VALUE):
     return None
 
 
-def split_coordinate(coordinate):
+def split_coordinate(coordinate: str) -> str:
     """Split climatological values station coordinate."""
     coord_deg = coordinate[0:2]
     coord_min = coordinate[2:4]
@@ -66,12 +72,12 @@ def split_coordinate(coordinate):
     return f"{coord_deg} {coord_min}m {coord_sec}s {coord_dir}"
 
 
-def parse_station_coordinates(latitude, longitude):
+def parse_station_coordinates(latitude: str, longitude: str) -> str:
     """Parse climatological values station coordinates."""
     return f"{split_coordinate(latitude)} {split_coordinate(longitude)}"
 
 
-def parse_town_code(town_id):
+def parse_town_code(town_id: str) -> str:
     """Parse town code from ID if needed."""
     if isinstance(town_id, str) and town_id.startswith(API_ID_PFX):
         return town_id[len(API_ID_PFX) :]
