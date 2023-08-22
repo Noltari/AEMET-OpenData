@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Client for the AEMET OpenData REST API."""
 
 import logging
@@ -49,7 +48,6 @@ class AEMET:
         }
         self.timeout: int = timeout
 
-    # Perform API call
     async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
         """Perform Rest API call."""
         _LOGGER.debug("api_call: cmd=%s", cmd)
@@ -89,7 +87,6 @@ class AEMET:
 
         return json_response
 
-    # Fetch API data
     async def api_data(self, url: str) -> dict[str, Any]:
         """Fetch API data."""
         _LOGGER.debug("api_data: url=%s", url)
@@ -111,7 +108,6 @@ class AEMET:
 
         return cast(dict[str, Any], resp_json)
 
-    # Calculate distance between 2 points
     def calc_distance(
         self, start: tuple[float, float], end: tuple[float, float]
     ) -> Distance:
@@ -120,13 +116,11 @@ class AEMET:
             return geopy.distance.geodesic(start, end)
         return geopy.distance.great_circle(start, end)
 
-    # Enable/Disable high precision for distance calculations
     def distance_high_precision(self, dist_hp: bool) -> bool:
         """Enable/Disable high precision for distance calculations."""
         self.dist_hp = dist_hp
         return self.dist_hp
 
-    # Get climatological values
     async def get_climatological_values_stations(
         self, fetch_data: bool = True
     ) -> dict[str, Any]:
@@ -135,7 +129,6 @@ class AEMET:
             "valores/climatologicos/inventarioestaciones/todasestaciones", fetch_data
         )
 
-    # Get climatological values station by coordinates
     async def get_climatological_values_station_by_coordinates(
         self, latitude: float, longitude: float
     ) -> dict[str, Any] | None:
@@ -158,7 +151,6 @@ class AEMET:
         _LOGGER.debug("distance: %s, station: %s", distance, station)
         return station
 
-    # Get climatological values station data
     async def get_climatological_values_station_data(
         self, station: str, fetch_data: bool = True
     ) -> dict[str, Any]:
@@ -168,14 +160,12 @@ class AEMET:
             fetch_data,
         )
 
-    # Get conventional observation stations
     async def get_conventional_observation_stations(
         self, fetch_data: bool = True
     ) -> dict[str, Any]:
         """Get stations available for conventional observations."""
         return await self.api_call("observacion/convencional/todas", fetch_data)
 
-    # Get conventional observation station by coordinates
     async def get_conventional_observation_station_by_coordinates(
         self, latitude: float, longitude: float
     ) -> dict[str, Any] | None:
@@ -196,7 +186,6 @@ class AEMET:
         _LOGGER.debug("distance: %s, station: %s", distance, station)
         return station
 
-    # Get conventional observation station data
     async def get_conventional_observation_station_data(
         self, station: str, fetch_data: bool = True
     ) -> dict[str, Any]:
@@ -205,12 +194,10 @@ class AEMET:
             f"observacion/convencional/datos/estacion/{station}", fetch_data
         )
 
-    # Get map of lightning strikes
     async def get_lightnings_map(self) -> dict[str, Any]:
         """Get map with lightning falls (last 6h)."""
         return await self.api_call("red/rayos/mapa")
 
-    # Get specific forecast
     async def get_specific_forecast_town_daily(
         self, town: str, fetch_data: bool = True
     ) -> dict[str, Any]:
@@ -229,12 +216,10 @@ class AEMET:
             fetch_data,
         )
 
-    # Get specific town information
     async def get_town(self, town: str) -> dict[str, Any]:
         """Get information about specific town."""
         return await self.api_call(f"maestro/municipio/{town}")
 
-    # Get town by coordinates
     async def get_town_by_coordinates(
         self, latitude: float, longitude: float
     ) -> dict[str, Any] | None:
@@ -255,7 +240,6 @@ class AEMET:
         _LOGGER.debug("distance: %s, town: %s", distance, town)
         return town
 
-    # Get full list of towns
     async def get_towns(self) -> dict[str, Any]:
         """Get information about towns."""
         return await self.api_call("maestro/municipios")

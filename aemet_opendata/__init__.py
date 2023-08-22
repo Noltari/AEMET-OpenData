@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """AEMET OpenData API."""
 from .interface import AEMET
 

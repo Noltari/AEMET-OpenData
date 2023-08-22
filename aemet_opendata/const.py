@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """AEMET OpenData Constants."""
 
 AEMET_ATTR_DATA = "datos"

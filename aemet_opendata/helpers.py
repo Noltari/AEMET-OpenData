@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """AEMET OpenData Helpers."""
 
 from typing import Any
