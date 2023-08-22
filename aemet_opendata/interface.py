@@ -1,5 +1,6 @@
 """Client for the AEMET OpenData REST API."""
 
+import asyncio
 from dataclasses import dataclass
 import logging
 from typing import Any, cast
@@ -11,25 +12,57 @@ from geopy.distance import Distance
 
 from .const import (
     AEMET_ATTR_DATA,
+    AEMET_ATTR_STATE,
     AEMET_ATTR_STATION_LATITUDE,
     AEMET_ATTR_STATION_LONGITUDE,
     AEMET_ATTR_TOWN_LATITUDE_DECIMAL,
     AEMET_ATTR_TOWN_LONGITUDE_DECIMAL,
     AEMET_ATTR_WEATHER_STATION_LATITUDE,
     AEMET_ATTR_WEATHER_STATION_LONGITUDE,
+    AOD_CONDITION,
+    AOD_DEW_POINT,
+    AOD_FEEL_TEMP,
+    AOD_HUMIDITY,
+    AOD_PRECIPITATION,
+    AOD_PRECIPITATION_PROBABILITY,
+    AOD_PRESSURE,
+    AOD_RAIN,
+    AOD_RAIN_PROBABILITY,
+    AOD_SNOW,
+    AOD_SNOW_PROBABILITY,
+    AOD_STATION,
+    AOD_STORM_PROBABILITY,
+    AOD_TEMP,
+    AOD_TIMESTAMP,
+    AOD_TOWN,
+    AOD_UV_INDEX,
+    AOD_WEATHER,
+    AOD_WIND_DIRECTION,
+    AOD_WIND_SPEED,
+    AOD_WIND_SPEED_MAX,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_TIMEOUT,
     API_URL,
     ATTR_DATA,
+    ATTR_DISTANCE,
     ATTR_RESPONSE,
     RAW_FORECAST_DAILY,
     RAW_FORECAST_HOURLY,
     RAW_STATIONS,
     RAW_TOWNS,
 )
-from .exceptions import AemetError, AuthError, TooManyRequests
-from .helpers import parse_station_coordinates, parse_town_code
+from .exceptions import (
+    AemetError,
+    ApiError,
+    AuthError,
+    StationNotFound,
+    TooManyRequests,
+    TownNotFound,
+)
+from .helpers import get_current_datetime, parse_station_coordinates, parse_town_code
+from .station import Station
+from .town import Town
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,10 +72,20 @@ class ConnectionOptions:
     """AEMET OpenData API options for connection."""
 
     api_key: str
+    station_data: bool = False
 
 
 class AEMET:
     """Interacts with the AEMET OpenData API."""
+
+    _api_raw_data: dict[str, Any]
+    aiohttp_session: ClientSession
+    coords: tuple[float, float] | None
+    dist_hp: bool
+    headers: dict[str, Any]
+    options: ConnectionOptions
+    station: Station | None
+    town: Town | None
 
     def __init__(
         self,
@@ -50,19 +93,22 @@ class AEMET:
         options: ConnectionOptions,
     ) -> None:
         """Init AEMET OpenData API."""
-        self._api_raw_data: dict[str, Any] = {
+        self._api_raw_data = {
             RAW_FORECAST_DAILY: {},
             RAW_FORECAST_HOURLY: {},
             RAW_STATIONS: {},
             RAW_TOWNS: {},
         }
         self.aiohttp_session = aiohttp_session
-        self.dist_hp: bool = False
-        self.headers: dict[str, Any] = {
+        self.coords = None
+        self.dist_hp = False
+        self.headers = {
             "Cache-Control": "no-cache",
             "api_key": options.api_key,
         }
         self.options = options
+        self.station = None
+        self.town = None
 
     async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
         """Perform Rest API call."""
@@ -79,14 +125,20 @@ class AEMET:
             raise AemetError(err) from err
 
         if resp.status == 401:
-            raise AuthError(await resp.text())
+            raise AuthError("API authentication error")
+        if resp.status == 404:
+            raise ApiError("API data error")
         if resp.status == 429:
-            raise TooManyRequests(await resp.text())
+            raise TooManyRequests("Too many API requests")
         if resp.status != 200:
-            raise AemetError(f"API status={resp.status} text={await resp.text()}")
+            raise AemetError(f"API status={resp.status}")
 
         resp_json = await resp.json(content_type=None)
         _LOGGER.debug("api_call: cmd=%s resp=%s", cmd, resp_json)
+
+        if isinstance(resp_json, dict):
+            if resp_json.get(AEMET_ATTR_STATE) == 404:
+                raise ApiError("API data error")
 
         json_response = cast(dict[str, Any], resp_json)
         if fetch_data and AEMET_ATTR_DATA in json_response:
@@ -116,17 +168,43 @@ class AEMET:
         except ClientError as err:
             raise AemetError(err) from err
 
+        if resp.status == 404:
+            raise ApiError("API data error")
+        if resp.status == 429:
+            raise TooManyRequests("Too many API requests")
         if resp.status != 200:
-            raise AemetError(f"API status={resp.status} text={await resp.text()}")
+            raise AemetError(f"API status={resp.status}")
 
         resp_json = await resp.json(content_type=None)
         _LOGGER.debug("api_data: url=%s resp=%s", url, resp_json)
+
+        if isinstance(resp_json, dict):
+            if resp_json.get(AEMET_ATTR_STATE) == 404:
+                raise ApiError("API data error")
 
         return cast(dict[str, Any], resp_json)
 
     def raw_data(self) -> dict[str, Any]:
         """Return raw AEMET OpenData API data."""
         return self._api_raw_data
+
+    def data(self) -> dict[str, Any]:
+        """Return AEMET OpenData data."""
+        data: dict[str, Any] = {}
+
+        if self.station is not None:
+            data[AOD_STATION] = self.station.data()
+
+        if self.town is not None:
+            data[AOD_TOWN] = self.town.data()
+
+        weather = self.weather()
+        if weather is not None:
+            data[AOD_WEATHER] = weather
+
+        data[AOD_TIMESTAMP] = get_current_datetime().isoformat()
+
+        return data
 
     def calc_distance(
         self, start: tuple[float, float], end: tuple[float, float]
@@ -151,11 +229,11 @@ class AEMET:
 
     async def get_climatological_values_station_by_coordinates(
         self, latitude: float, longitude: float
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         """Get closest climatological values station to coordinates."""
+        station: dict[str, Any] | None = None
         stations = await self.get_climatological_values_stations()
         search_coords = (latitude, longitude)
-        station = None
         distance = API_MIN_STATION_DISTANCE_KM
         for cur_station in stations[ATTR_DATA]:
             station_coords = parse_station_coordinates(
@@ -168,6 +246,8 @@ class AEMET:
             if cur_distance < distance:
                 distance = cur_distance
                 station = cur_station
+        if station is None:
+            raise StationNotFound(f"No stations found for [{latitude}, {longitude}]")
         _LOGGER.debug("distance: %s, station: %s", distance, station)
         return station
 
@@ -188,11 +268,11 @@ class AEMET:
 
     async def get_conventional_observation_station_by_coordinates(
         self, latitude: float, longitude: float
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         """Get closest conventional observation station to coordinates."""
+        station: dict[str, Any] | None = None
         stations = await self.get_conventional_observation_stations()
         search_coords = (latitude, longitude)
-        station = None
         distance = API_MIN_STATION_DISTANCE_KM
         for cur_station in stations[ATTR_DATA]:
             cur_coords = (
@@ -203,7 +283,10 @@ class AEMET:
             if cur_distance < distance:
                 distance = cur_distance
                 station = cur_station
+        if station is None:
+            raise StationNotFound(f"No stations found for [{latitude}, {longitude}]")
         _LOGGER.debug("distance: %s, station: %s", distance, station)
+        station[ATTR_DISTANCE] = distance
         return station
 
     async def get_conventional_observation_station_data(
@@ -250,11 +333,11 @@ class AEMET:
 
     async def get_town_by_coordinates(
         self, latitude: float, longitude: float
-    ) -> dict[str, Any] | None:
+    ) -> dict[str, Any]:
         """Get closest town to coordinates."""
+        town: dict[str, Any] | None = None
         towns = await self.get_towns()
         search_coords = (latitude, longitude)
-        town = None
         distance = API_MIN_TOWN_DISTANCE_KM
         for cur_town in towns[ATTR_DATA]:
             cur_coords = (
@@ -265,9 +348,145 @@ class AEMET:
             if cur_distance < distance:
                 distance = cur_distance
                 town = cur_town
+        if town is None:
+            raise TownNotFound(f"No towns found for [{latitude}, {longitude}]")
         _LOGGER.debug("distance: %s, town: %s", distance, town)
+        town[ATTR_DISTANCE] = distance
         return town
 
     async def get_towns(self) -> dict[str, Any]:
         """Get information about towns."""
         return await self.api_call("maestro/municipios")
+
+    async def select_coordinates(self, latitude: float, longitude: float) -> None:
+        """Select town and station based on provided coordinates."""
+        coords = (latitude, longitude)
+
+        if self.options.station_data:
+            try:
+                station_data = (
+                    await self.get_conventional_observation_station_by_coordinates(
+                        latitude,
+                        longitude,
+                    )
+                )
+            except StationNotFound as err:
+                _LOGGER.error(err)
+                station_data = None
+        else:
+            station_data = None
+
+        town_data = await self.get_town_by_coordinates(latitude, longitude)
+
+        self.coords = coords
+        if station_data is not None:
+            self.station = Station(station_data)
+        self.town = Town(town_data)
+
+    async def update_daily(self) -> None:
+        """Update AEMET OpenData town daily forecast."""
+        if self.town is not None:
+            town_id = self.town.get_id()
+            daily = await self.get_specific_forecast_town_daily(town_id)
+            self.town.update_daily(daily)
+
+    async def update_hourly(self) -> None:
+        """Update AEMET OpenData town hourly forecast."""
+        if self.town is not None:
+            town_id = self.town.get_id()
+            hourly = await self.get_specific_forecast_town_hourly(town_id)
+            self.town.update_hourly(hourly)
+
+    async def update_station(self) -> None:
+        """Update AEMET OpenData station."""
+        if self.station is not None:
+            station_id = self.station.get_id()
+            station = await self.get_conventional_observation_station_data(station_id)
+            self.station.update_samples(station)
+
+    async def update(self) -> None:
+        """Update all AEMET OpenData data."""
+        tasks = [
+            self.update_daily(),
+            self.update_hourly(),
+            self.update_station(),
+        ]
+        await asyncio.gather(*tasks)
+
+    def weather(self) -> dict[str, Any] | None:
+        """Update AEMET OpenData town daily forecast."""
+        daily: dict[str, Any]
+        hourly: dict[str, Any]
+        station: dict[str, Any]
+
+        if self.station is not None:
+            station = self.station.weather()
+        else:
+            station = {}
+
+        if self.town is not None:
+            daily = self.town.weather_daily()
+            hourly = self.town.weather_hourly()
+        else:
+            daily = {}
+            hourly = {}
+
+        condition = hourly.get(AOD_CONDITION) or daily.get(AOD_CONDITION)
+        dew_point = station.get(AOD_DEW_POINT)
+        feel_temp = hourly.get(AOD_FEEL_TEMP)
+        humidity = station.get(AOD_HUMIDITY)
+        if humidity is None:
+            humidity = hourly.get(AOD_HUMIDITY)
+        pressure = station.get(AOD_PRESSURE)
+        precipitation = station.get(AOD_PRECIPITATION)
+        if precipitation is None:
+            precipitation = hourly.get(AOD_PRECIPITATION)
+        precipitation_prob = hourly.get(AOD_PRECIPITATION_PROBABILITY)
+        if precipitation_prob is None:
+            precipitation_prob = daily.get(AOD_PRECIPITATION_PROBABILITY)
+        rain = station.get(AOD_PRECIPITATION)
+        if rain is None:
+            rain = hourly.get(AOD_RAIN)
+        rain_prob = hourly.get(AOD_RAIN_PROBABILITY)
+        snow = hourly.get(AOD_SNOW)
+        snow_prob = hourly.get(AOD_SNOW_PROBABILITY)
+        storm_prob = hourly.get(AOD_STORM_PROBABILITY)
+        temp = station.get(AOD_TEMP)
+        if temp is None:
+            temp = hourly.get(AOD_TEMP)
+        uv_index = daily.get(AOD_UV_INDEX)
+        wind_direction = (
+            station.get(AOD_WIND_DIRECTION)
+            or hourly.get(AOD_WIND_DIRECTION)
+            or daily.get(AOD_WIND_DIRECTION)
+        )
+        wind_speed = (
+            station.get(AOD_WIND_SPEED)
+            or hourly.get(AOD_WIND_SPEED)
+            or daily.get(AOD_WIND_SPEED)
+        )
+        wind_speed_max = station.get(AOD_WIND_SPEED_MAX) or hourly.get(
+            AOD_WIND_SPEED_MAX
+        )
+
+        weather: dict[str, Any] = {
+            AOD_CONDITION: condition,
+            AOD_DEW_POINT: dew_point,
+            AOD_HUMIDITY: humidity,
+            AOD_FEEL_TEMP: feel_temp,
+            AOD_PRECIPITATION: precipitation,
+            AOD_PRECIPITATION_PROBABILITY: precipitation_prob,
+            AOD_PRESSURE: pressure,
+            AOD_RAIN: rain,
+            AOD_RAIN_PROBABILITY: rain_prob,
+            AOD_SNOW: snow,
+            AOD_SNOW_PROBABILITY: snow_prob,
+            AOD_STORM_PROBABILITY: storm_prob,
+            AOD_TEMP: temp,
+            AOD_UV_INDEX: uv_index,
+            AOD_WIND_DIRECTION: wind_direction,
+            AOD_WIND_SPEED: wind_speed,
+            AOD_WIND_SPEED_MAX: wind_speed_max,
+        }
+
+        return weather
