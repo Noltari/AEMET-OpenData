@@ -14,7 +14,7 @@ async def main():
     """AEMET OpenData client example."""
 
     async with aiohttp.ClientSession() as aiohttp_session:
-        client = AEMET(aiohttp_session, _secrets.AEMET_API_KEY)
+        client = AEMET(aiohttp_session, _secrets.AEMET_OPTIONS)
 
         try:
             get_town_start = timeit.default_timer()

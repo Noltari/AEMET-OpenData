@@ -1,5 +1,6 @@
 """Client for the AEMET OpenData REST API."""
 
+from dataclasses import dataclass
 import logging
 from typing import Any, cast
 
@@ -29,21 +30,29 @@ from .helpers import parse_station_coordinates, parse_town_code
 _LOGGER = logging.getLogger(__name__)
 
 
+@dataclass
+class ConnectionOptions:
+    """AEMET OpenData API options for connection."""
+
+    api_key: str
+
+
 class AEMET:
     """Interacts with the AEMET OpenData API."""
 
     def __init__(
         self,
         aiohttp_session: ClientSession,
-        api_key: str,
+        options: ConnectionOptions,
     ) -> None:
         """Init AEMET OpenData API."""
         self.aiohttp_session = aiohttp_session
         self.dist_hp: bool = False
         self.headers: dict[str, Any] = {
             "Cache-Control": "no-cache",
-            "api_key": api_key,
+            "api_key": options.api_key,
         }
+        self.options = options
 
     async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
         """Perform Rest API call."""
