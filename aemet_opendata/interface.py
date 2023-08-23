@@ -36,7 +36,6 @@ class AEMET:
         self,
         aiohttp_session: ClientSession,
         api_key: str,
-        timeout: int = API_TIMEOUT,
     ) -> None:
         """Init AEMET OpenData API."""
         self.aiohttp_session = aiohttp_session
@@ -45,7 +44,6 @@ class AEMET:
             "Cache-Control": "no-cache",
             "api_key": api_key,
         }
-        self.timeout: int = timeout
 
     async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
         """Perform Rest API call."""
@@ -55,7 +53,7 @@ class AEMET:
             resp: ClientResponse = await self.aiohttp_session.request(
                 "GET",
                 f"{API_URL}/{cmd}",
-                timeout=self.timeout,
+                timeout=API_TIMEOUT,
                 headers=self.headers,
             )
         except ClientError as err:
@@ -94,7 +92,7 @@ class AEMET:
             resp: ClientResponse = await self.aiohttp_session.request(
                 "GET",
                 url,
-                timeout=self.timeout,
+                timeout=API_TIMEOUT,
             )
         except ClientError as err:
             raise AemetError(err) from err
