@@ -1,3 +1,7 @@
 """AEMET OpenData Secrets."""
 
-AEMET_API_KEY: str = "MY_API_KEY"
+from aemet_opendata.interface import ConnectionOptions
+
+AEMET_OPTIONS = ConnectionOptions(
+    api_key="MY_API_KEY",
+)
