@@ -1,7 +1,6 @@
 """Client for the AEMET OpenData REST API."""
 
 import logging
-
 from typing import Any, cast
 
 from aiohttp import ClientError, ClientSession

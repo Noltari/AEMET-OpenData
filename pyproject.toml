@@ -27,6 +27,63 @@ dependencies = [
 "Homepage" = "https://github.com/Noltari/AEMET-OpenData"
 "Bug Tracker" = "https://github.com/Noltari/AEMET-OpenData/issues"
 
+[tool.mypy]
+python_version = "3.11"
+
+[[tool.mypy.overrides]]
+module = "geopy.*"
+ignore_missing_imports = true
+
+[tool.pylint.MAIN]
+py-version = "3.11"
+
+[tool.pylint.BASIC]
+class-const-naming-style = "any"
+
+[tool.pylint."MESSAGES CONTROL"]
+# Reasons disabled:
+# duplicate-code - unavoidable
+# invalid-name - not using snake case naming style
+# too-many-* - are not enforced for the sake of readability
+# too-few-* - same as too-many-*
+disable = [
+    "duplicate-code",
+    "invalid-name",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-instance-attributes",
+    "too-many-locals",
+    "too-many-public-methods",
+    "too-many-statements",
+]
+
+[tool.pylint.REPORTS]
+score = false
+
+[tool.pylint.FORMAT]
+expected-line-ending-format = "LF"
+
+[tool.ruff]
+select = [
+    "D",  # docstrings
+    "E",  # pycodestyle
+    "G",  # flake8-logging-format
+    "I",  # isort
+    "W",  # pycodestyle
+]
+
+ignore = [
+    "D202",  # No blank lines allowed aftee function docstring
+    "D203",  # 1 blank line required before class docstring
+    "D213",  # Multi-line docstring summary should start at the second line
+]
+
+[tool.ruff.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+split-on-trailing-comma = false
+
 [tool.setuptools]
 platforms = ["any"]
 zip-safe = false
