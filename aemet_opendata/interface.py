@@ -23,6 +23,10 @@ from .const import (
     API_URL,
     ATTR_DATA,
     ATTR_RESPONSE,
+    RAW_FORECAST_DAILY,
+    RAW_FORECAST_HOURLY,
+    RAW_STATIONS,
+    RAW_TOWNS,
 )
 from .exceptions import AemetError, AuthError, TooManyRequests
 from .helpers import parse_station_coordinates, parse_town_code
@@ -46,6 +50,12 @@ class AEMET:
         options: ConnectionOptions,
     ) -> None:
         """Init AEMET OpenData API."""
+        self._api_raw_data: dict[str, Any] = {
+            RAW_FORECAST_DAILY: {},
+            RAW_FORECAST_HOURLY: {},
+            RAW_STATIONS: {},
+            RAW_TOWNS: {},
+        }
         self.aiohttp_session = aiohttp_session
         self.dist_hp: bool = False
         self.headers: dict[str, Any] = {
@@ -113,6 +123,10 @@ class AEMET:
         _LOGGER.debug("api_data: url=%s resp=%s", url, resp_json)
 
         return cast(dict[str, Any], resp_json)
+
+    def raw_data(self) -> dict[str, Any]:
+        """Return raw AEMET OpenData API data."""
+        return self._api_raw_data
 
     def calc_distance(
         self, start: tuple[float, float], end: tuple[float, float]
@@ -196,9 +210,11 @@ class AEMET:
         self, station: str, fetch_data: bool = True
     ) -> dict[str, Any]:
         """Get data from conventional observation station."""
-        return await self.api_call(
+        res = await self.api_call(
             f"observacion/convencional/datos/estacion/{station}", fetch_data
         )
+        self._api_raw_data[RAW_STATIONS][station] = res
+        return res
 
     async def get_lightnings_map(self) -> dict[str, Any]:
         """Get map with lightning falls (last 6h)."""
@@ -208,23 +224,29 @@ class AEMET:
         self, town: str, fetch_data: bool = True
     ) -> dict[str, Any]:
         """Get daily forecast for specific town (daily)."""
-        return await self.api_call(
+        res = await self.api_call(
             f"prediccion/especifica/municipio/diaria/{parse_town_code(town)}",
             fetch_data,
         )
+        self._api_raw_data[RAW_FORECAST_DAILY][town] = res
+        return res
 
     async def get_specific_forecast_town_hourly(
         self, town: str, fetch_data: bool = True
     ) -> dict[str, Any]:
         """Get hourly forecast for specific town (hourly)."""
-        return await self.api_call(
+        res = await self.api_call(
             f"prediccion/especifica/municipio/horaria/{parse_town_code(town)}",
             fetch_data,
         )
+        self._api_raw_data[RAW_FORECAST_HOURLY][town] = res
+        return res
 
     async def get_town(self, town: str) -> dict[str, Any]:
         """Get information about specific town."""
-        return await self.api_call(f"maestro/municipio/{town}")
+        res = await self.api_call(f"maestro/municipio/{town}")
+        self._api_raw_data[RAW_TOWNS][town] = res
+        return res
 
     async def get_town_by_coordinates(
         self, latitude: float, longitude: float

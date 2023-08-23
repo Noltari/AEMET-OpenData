@@ -62,3 +62,8 @@ API_URL: Final[str] = "https://opendata.aemet.es/opendata/api"
 
 ATTR_DATA: Final[str] = "data"
 ATTR_RESPONSE: Final[str] = "response"
+
+RAW_FORECAST_DAILY: Final[str] = "forecast-daily"
+RAW_FORECAST_HOURLY: Final[str] = "forecast-hourly"
+RAW_STATIONS: Final[str] = "stations"
+RAW_TOWNS: Final[str] = "towns"
