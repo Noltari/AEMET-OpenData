@@ -64,9 +64,9 @@ class Station:
     temp: float
     temp_max: float
     temp_min: float
-    wind_direction: float
-    wind_speed: float
-    wind_speed_max: float
+    wind_direction: float | None
+    wind_speed: float | None
+    wind_speed_max: float | None
     zoneinfo: ZoneInfo
 
     def __init__(self, data: dict[str, Any]) -> None:
@@ -149,15 +149,15 @@ class Station:
         """Return Station timezone."""
         return self.zoneinfo
 
-    def get_wind_direction(self) -> float:
+    def get_wind_direction(self) -> float | None:
         """Return Station wind direction."""
         return self.wind_direction
 
-    def get_wind_speed(self) -> float:
+    def get_wind_speed(self) -> float | None:
         """Return Station wind speed."""
         return self.wind_speed
 
-    def get_wind_speed_max(self) -> float:
+    def get_wind_speed_max(self) -> float | None:
         """Return Station maximum wind speed."""
         return self.wind_speed_max
 
@@ -176,9 +176,12 @@ class Station:
         self.temp = float(data[AEMET_ATTR_STATION_TEMPERATURE])
         self.temp_max = float(data[AEMET_ATTR_STATION_TEMPERATURE_MAX])
         self.temp_min = float(data[AEMET_ATTR_STATION_TEMPERATURE_MIN])
-        self.wind_direction = float(data[AEMET_ATTR_STATION_WIND_DIRECTION])
-        self.wind_speed = float(data[AEMET_ATTR_STATION_WIND_SPEED])
-        self.wind_speed_max = float(data[AEMET_ATTR_STATION_WIND_SPEED_MAX])
+        if AEMET_ATTR_STATION_WIND_DIRECTION in data:
+            self.wind_direction = float(data[AEMET_ATTR_STATION_WIND_DIRECTION])
+        if AEMET_ATTR_STATION_WIND_SPEED in data:
+            self.wind_speed = float(data[AEMET_ATTR_STATION_WIND_SPEED])
+        if AEMET_ATTR_STATION_WIND_SPEED_MAX in data:
+            self.wind_speed_max = float(data[AEMET_ATTR_STATION_WIND_SPEED_MAX])
 
     def update_samples(self, samples: dict[str, Any]) -> None:
         """Update Station data from samples."""
@@ -213,10 +216,20 @@ class Station:
             AOD_TEMP_MIN: self.get_temp_min(),
             AOD_TIMESTAMP: self.get_timestamp(),
             AOD_TIMEZONE: self.get_timezone(),
-            AOD_WIND_DIRECTION: self.get_wind_direction(),
-            AOD_WIND_SPEED: self.get_wind_speed(),
-            AOD_WIND_SPEED_MAX: self.get_wind_speed_max(),
         }
+
+        wind_direction = self.get_wind_direction()
+        if wind_direction is not None:
+            data[AOD_WIND_DIRECTION] = wind_direction
+
+        wind_speed = self.get_wind_speed()
+        if wind_speed is not None:
+            data[AOD_WIND_SPEED] = wind_speed
+
+        wind_speed_max = self.get_wind_speed()
+        if wind_speed_max is not None:
+            data[AOD_WIND_SPEED_MAX] = wind_speed_max
+
         return data
 
     def weather(self) -> dict[str, Any]:
@@ -227,8 +240,18 @@ class Station:
             AOD_PRECIPITATION: self.get_precipitation(),
             AOD_PRESSURE: self.get_pressure(),
             AOD_TEMP: self.get_temp(),
-            AOD_WIND_DIRECTION: self.get_wind_direction(),
-            AOD_WIND_SPEED: self.get_wind_speed(),
-            AOD_WIND_SPEED_MAX: self.get_wind_speed_max(),
         }
+
+        wind_direction = self.get_wind_direction()
+        if wind_direction is not None:
+            weather[AOD_WIND_DIRECTION] = wind_direction
+
+        wind_speed = self.get_wind_speed()
+        if wind_speed is not None:
+            weather[AOD_WIND_SPEED] = wind_speed
+
+        wind_speed_max = self.get_wind_speed()
+        if wind_speed_max is not None:
+            weather[AOD_WIND_SPEED_MAX] = wind_speed_max
+
         return weather
