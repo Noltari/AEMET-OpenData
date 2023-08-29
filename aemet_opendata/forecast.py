@@ -461,12 +461,12 @@ class HourlyForecastValue(ForecastValue):
 
         if self.wind_direction is not None:
             self.wind_speed = float(
-                self.parse_value(data[AEMET_ATTR_WIND_GUST], hour)[0]
-            )
-            self.wind_speed_max = float(
                 self.parse_value(
                     data[AEMET_ATTR_WIND_GUST], hour, key=AEMET_ATTR_SPEED
                 )[0]
+            )
+            self.wind_speed_max = float(
+                self.parse_value(data[AEMET_ATTR_WIND_GUST], hour)
             )
         else:
             self.wind_speed = None
