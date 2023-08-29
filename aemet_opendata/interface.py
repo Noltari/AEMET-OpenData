@@ -445,7 +445,7 @@ class AEMET:
         hourly: dict[str, Any]
         station: dict[str, Any]
 
-        if self.station is not None:
+        if self.station is not None and not self.station.get_outdated():
             station = self.station.weather()
         else:
             station = {}
