@@ -226,7 +226,7 @@ class Station:
         if wind_speed is not None:
             data[AOD_WIND_SPEED] = wind_speed
 
-        wind_speed_max = self.get_wind_speed()
+        wind_speed_max = self.get_wind_speed_max()
         if wind_speed_max is not None:
             data[AOD_WIND_SPEED_MAX] = wind_speed_max
 
@@ -250,7 +250,7 @@ class Station:
         if wind_speed is not None:
             weather[AOD_WIND_SPEED] = wind_speed
 
-        wind_speed_max = self.get_wind_speed()
+        wind_speed_max = self.get_wind_speed_max()
         if wind_speed_max is not None:
             weather[AOD_WIND_SPEED_MAX] = wind_speed_max
 
