@@ -55,15 +55,15 @@ class Station:
     coords: tuple[float, float]
     _datetime: datetime
     distance: float
-    dew_point: float
-    humidity: float
+    dew_point: float | None
+    humidity: float | None
     id: str
     name: str
-    precipitation: float
-    pressure: float
-    temp: float
-    temp_max: float
-    temp_min: float
+    precipitation: float | None
+    pressure: float | None
+    temp: float | None
+    temp_max: float | None
+    temp_min: float | None
     wind_direction: float | None
     wind_speed: float | None
     wind_speed_max: float | None
@@ -71,6 +71,7 @@ class Station:
 
     def __init__(self, data: dict[str, Any]) -> None:
         """Init AEMET OpenData Station."""
+
         self.altitude = float(data[AEMET_ATTR_STATION_ALTITUDE])
         self.coords = (
             float(data[AEMET_ATTR_STATION_LATITUDE]),
@@ -100,11 +101,11 @@ class Station:
         """Return Station distance from selected coordinates."""
         return round(self.distance, 3)
 
-    def get_dew_point(self) -> float:
+    def get_dew_point(self) -> float | None:
         """Return Station dew point."""
         return self.dew_point
 
-    def get_humidity(self) -> float:
+    def get_humidity(self) -> float | None:
         """Return Station humidity."""
         return self.humidity
 
@@ -112,7 +113,7 @@ class Station:
         """Return Station ID."""
         return self.id
 
-    def get_name(self) -> str:
+    def get_name(self) -> str | None:
         """Return Station name."""
         return self.name
 
@@ -121,23 +122,23 @@ class Station:
         cur_dt = get_current_datetime()
         return cur_dt > self.get_datetime() + STATION_MAX_DELTA
 
-    def get_precipitation(self) -> float:
+    def get_precipitation(self) -> float | None:
         """Return Station precipitation."""
         return self.precipitation
 
-    def get_pressure(self) -> float:
+    def get_pressure(self) -> float | None:
         """Return Station pressure."""
         return self.pressure
 
-    def get_temp(self) -> float:
+    def get_temp(self) -> float | None:
         """Return Station temperature."""
         return self.temp
 
-    def get_temp_max(self) -> float:
+    def get_temp_max(self) -> float | None:
         """Return Station maximum temperature."""
         return self.temp_max
 
-    def get_temp_min(self) -> float:
+    def get_temp_min(self) -> float | None:
         """Return Station minimum temperature."""
         return self.temp_min
 
@@ -166,20 +167,36 @@ class Station:
         station_dt = parse_api_timestamp(data[AEMET_ATTR_STATION_DATE])
 
         self._datetime = station_dt.astimezone(self.get_timezone())
-        self.dew_point = float(data[AEMET_ATTR_STATION_DEWPOINT])
-        self.humidity = float(data[AEMET_ATTR_STATION_HUMIDITY])
-        self.precipitation = float(data[AEMET_ATTR_STATION_PRECIPITATION])
+
+        if AEMET_ATTR_STATION_DEWPOINT in data:
+            self.dew_point = float(data[AEMET_ATTR_STATION_DEWPOINT])
+
+        if AEMET_ATTR_STATION_HUMIDITY in data:
+            self.humidity = float(data[AEMET_ATTR_STATION_HUMIDITY])
+
+        if AEMET_ATTR_STATION_PRECIPITATION in data:
+            self.precipitation = float(data[AEMET_ATTR_STATION_PRECIPITATION])
+
         if AEMET_ATTR_STATION_PRESSURE_SEA in data:
             self.pressure = float(data[AEMET_ATTR_STATION_PRESSURE_SEA])
-        else:
+        elif AEMET_ATTR_STATION_PRESSURE in data:
             self.pressure = float(data[AEMET_ATTR_STATION_PRESSURE])
-        self.temp = float(data[AEMET_ATTR_STATION_TEMPERATURE])
-        self.temp_max = float(data[AEMET_ATTR_STATION_TEMPERATURE_MAX])
-        self.temp_min = float(data[AEMET_ATTR_STATION_TEMPERATURE_MIN])
+
+        if AEMET_ATTR_STATION_TEMPERATURE in data:
+            self.temp = float(data[AEMET_ATTR_STATION_TEMPERATURE])
+
+        if AEMET_ATTR_STATION_TEMPERATURE_MAX in data:
+            self.temp_max = float(data[AEMET_ATTR_STATION_TEMPERATURE_MAX])
+
+        if AEMET_ATTR_STATION_TEMPERATURE_MIN in data:
+            self.temp_min = float(data[AEMET_ATTR_STATION_TEMPERATURE_MIN])
+
         if AEMET_ATTR_STATION_WIND_DIRECTION in data:
             self.wind_direction = float(data[AEMET_ATTR_STATION_WIND_DIRECTION])
+
         if AEMET_ATTR_STATION_WIND_SPEED in data:
             self.wind_speed = float(data[AEMET_ATTR_STATION_WIND_SPEED])
+
         if AEMET_ATTR_STATION_WIND_SPEED_MAX in data:
             self.wind_speed_max = float(data[AEMET_ATTR_STATION_WIND_SPEED_MAX])
 
@@ -205,18 +222,40 @@ class Station:
             AOD_COORDS: self.get_coords(),
             AOD_DATETIME: self.get_datetime(),
             AOD_DISTANCE: self.get_distance(),
-            AOD_HUMIDITY: self.get_humidity(),
             AOD_ID: self.get_id(),
             AOD_NAME: self.get_name(),
             AOD_OUTDATED: self.get_outdated(),
-            AOD_PRECIPITATION: self.get_precipitation(),
-            AOD_PRESSURE: self.get_pressure(),
-            AOD_TEMP: self.get_temp(),
-            AOD_TEMP_MAX: self.get_temp_max(),
-            AOD_TEMP_MIN: self.get_temp_min(),
             AOD_TIMESTAMP: self.get_timestamp(),
             AOD_TIMEZONE: self.get_timezone(),
         }
+
+        dew_point = self.get_dew_point()
+        if dew_point is not None:
+            data[AOD_DEW_POINT] = dew_point
+
+        humidity = self.get_humidity()
+        if humidity is not None:
+            data[AOD_HUMIDITY] = humidity
+
+        precipitation = self.get_precipitation()
+        if precipitation is not None:
+            data[AOD_PRECIPITATION] = precipitation
+
+        pressure = self.get_pressure()
+        if pressure is not None:
+            data[AOD_PRESSURE] = pressure
+
+        temp = self.get_temp()
+        if temp is not None:
+            data[AOD_TEMP] = temp
+
+        temp_max = self.get_temp_max()
+        if temp_max is not None:
+            data[AOD_TEMP_MAX] = temp_max
+
+        temp_min = self.get_temp_min()
+        if temp_min is not None:
+            data[AOD_TEMP_MIN] = temp_min
 
         wind_direction = self.get_wind_direction()
         if wind_direction is not None:
@@ -234,13 +273,27 @@ class Station:
 
     def weather(self) -> dict[str, Any]:
         """Return Station weather data."""
-        weather: dict[str, Any] = {
-            AOD_DEW_POINT: self.get_dew_point(),
-            AOD_HUMIDITY: self.get_humidity(),
-            AOD_PRECIPITATION: self.get_precipitation(),
-            AOD_PRESSURE: self.get_pressure(),
-            AOD_TEMP: self.get_temp(),
-        }
+        weather: dict[str, Any] = {}
+
+        dew_point = self.get_dew_point()
+        if dew_point is not None:
+            weather[AOD_DEW_POINT] = dew_point
+
+        humidity = self.get_humidity()
+        if humidity is not None:
+            weather[AOD_HUMIDITY] = humidity
+
+        precipitation = self.get_precipitation()
+        if precipitation is not None:
+            weather[AOD_PRECIPITATION] = precipitation
+
+        pressure = self.get_pressure()
+        if pressure is not None:
+            weather[AOD_PRESSURE] = pressure
+
+        temp = self.get_temp()
+        if temp is not None:
+            weather[AOD_TEMP] = temp
 
         wind_direction = self.get_wind_direction()
         if wind_direction is not None:
