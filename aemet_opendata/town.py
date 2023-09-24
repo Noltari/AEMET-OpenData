@@ -1,6 +1,7 @@
 """AEMET OpenData Town."""
 
 from datetime import datetime
+import logging
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -48,6 +49,8 @@ from .const import (
 from .forecast import DailyForecastValue, HourlyForecastValue
 from .helpers import get_current_datetime, parse_api_timestamp, timezone_from_coords
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class DailyForecast:
     """AEMET OpenData Town Daily Forecast."""
@@ -56,10 +59,13 @@ class DailyForecast:
     forecast: list[DailyForecastValue]
     zoneinfo: ZoneInfo
 
-    def __init__(self, data: dict[str, Any], zoneinfo: ZoneInfo) -> None:
+    def __init__(
+        self, data: dict[str, Any], zoneinfo: ZoneInfo, legacy: bool = False
+    ) -> None:
         """Init AEMET OpenData Town Daily Forecast."""
         self._datetime = parse_api_timestamp(data[AEMET_ATTR_ELABORATED])
         self.forecast: list[DailyForecastValue] = []
+        self.legacy = legacy
         self.zoneinfo = zoneinfo
 
         cur_dt = get_current_datetime(zoneinfo)
@@ -69,17 +75,25 @@ class DailyForecast:
             day = parse_api_timestamp(day_data[AEMET_ATTR_DATE], zoneinfo)
             if cur_day <= day.date():
                 try:
-                    self.forecast += [DailyForecastValue(day_data, day)]
-                except ValueError:
-                    pass
+                    self.forecast += [DailyForecastValue(day_data, day, legacy)]
+                except ValueError as err:
+                    _LOGGER.debug(err)
 
     def get_current_forecast(self) -> DailyForecastValue | None:
         """Return Town current daily forecast."""
         cur_date = get_current_datetime(self.get_timezone()).date()
+        leg_date = None
+        leg_forecast = None
         for forecast in self.forecast:
             forecast_date = forecast.get_datetime().date()
             if cur_date == forecast_date:
                 return forecast
+            if forecast_date > cur_date:
+                if leg_date is None or forecast_date < leg_date:
+                    leg_date = forecast_date
+                    leg_forecast = forecast
+        if self.legacy:
+            return leg_forecast
         return None
 
     def get_timestamp(self) -> str:
@@ -132,10 +146,14 @@ class HourlyForecast:
     forecast: list[HourlyForecastValue]
     zoneinfo: ZoneInfo
 
-    def __init__(self, data: dict[str, Any], zoneinfo: ZoneInfo) -> None:
+    def __init__(
+        self, data: dict[str, Any], zoneinfo: ZoneInfo, legacy: bool = False
+    ) -> None:
         """Init AEMET OpenData Town Hourly Forecast."""
+
         self._datetime = parse_api_timestamp(data[AEMET_ATTR_ELABORATED])
         self.forecast: list[HourlyForecastValue] = []
+        self.legacy = legacy
         self.zoneinfo = zoneinfo
 
         cur_dt = get_current_datetime(zoneinfo)
@@ -153,10 +171,10 @@ class HourlyForecast:
 
                 for hour in range(start_hour, 24):
                     try:
-                        cur_forecast = HourlyForecastValue(day_data, day, hour)
+                        cur_forecast = HourlyForecastValue(day_data, day, hour, legacy)
                         self.forecast += [cur_forecast]
-                    except ValueError:
-                        pass
+                    except ValueError as err:
+                        _LOGGER.debug(err)
 
     def get_current_forecast(self) -> HourlyForecastValue | None:
         """Return Town current hourly forecast."""
@@ -233,7 +251,7 @@ class Town:
     residents: int
     zoneinfo: ZoneInfo
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: dict[str, Any], legacy: bool = False) -> None:
         """Init AEMET OpenData Town."""
         self.altitude = int(data[AEMET_ATTR_TOWN_ALTITUDE])
         self.coords = (
@@ -244,10 +262,14 @@ class Town:
         self.distance = float(data[ATTR_DISTANCE])
         self.hourly: HourlyForecast | None = None
         self.id = str(data[AEMET_ATTR_ID])
+        self.legacy = legacy
         self.name = str(data[AEMET_ATTR_NAME])
         self.residents = int(data[AEMET_ATTR_TOWN_RESIDENTS])
 
-        self.zoneinfo = timezone_from_coords(self.coords)
+        if self.legacy:
+            self.zoneinfo = ZoneInfo("UTC")
+        else:
+            self.zoneinfo = timezone_from_coords(self.coords)
 
     def get_altitude(self) -> int:
         """Return Town altitude."""
@@ -279,11 +301,15 @@ class Town:
 
     def update_daily(self, forecast: dict[str, Any]) -> None:
         """Update Town daily forecast."""
-        self.daily = DailyForecast(forecast[ATTR_DATA][0], self.get_timezone())
+        self.daily = DailyForecast(
+            forecast[ATTR_DATA][0], self.get_timezone(), self.legacy
+        )
 
     def update_hourly(self, forecast: dict[str, Any]) -> None:
         """Update Town hourly forecast."""
-        self.hourly = HourlyForecast(forecast[ATTR_DATA][0], self.get_timezone())
+        self.hourly = HourlyForecast(
+            forecast[ATTR_DATA][0], self.get_timezone(), self.legacy
+        )
 
     def data(self) -> dict[str, Any]:
         """Return Town data."""

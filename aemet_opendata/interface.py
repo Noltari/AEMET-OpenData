@@ -73,6 +73,7 @@ class ConnectionOptions:
 
     api_key: str
     station_data: bool = False
+    legacy_data: bool = False
 
 
 @dataclass
@@ -403,8 +404,8 @@ class AEMET:
 
         self.coords = coords
         if station_data is not None:
-            self.station = Station(station_data)
-        self.town = Town(town_data)
+            self.station = Station(station_data, self.options.legacy_data)
+        self.town = Town(town_data, self.options.legacy_data)
 
     async def update_daily(self) -> None:
         """Update AEMET OpenData town daily forecast."""
