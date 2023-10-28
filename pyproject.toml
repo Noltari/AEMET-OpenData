@@ -10,11 +10,12 @@ authors = [
   {name = "Álvaro Fernández Rojas", email = "noltari@gmail.com" }
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Topic :: Home Automation",
 ]
 dependencies = [
