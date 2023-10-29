@@ -54,6 +54,7 @@ from .const import (
 )
 from .exceptions import (
     AemetError,
+    AemetTimeout,
     ApiError,
     AuthError,
     StationNotFound,
@@ -149,7 +150,10 @@ class AEMET:
         if resp.status != 200:
             raise AemetError(f"API status={resp.status}")
 
-        resp_json = await resp.json(content_type=None)
+        try:
+            resp_json = await resp.json(content_type=None)
+        except asyncio.TimeoutError as err:
+            raise AemetTimeout(err) from err
         _LOGGER.debug("api_call: cmd=%s resp=%s", cmd, resp_json)
 
         if isinstance(resp_json, dict):
@@ -191,7 +195,10 @@ class AEMET:
         if resp.status != 200:
             raise AemetError(f"API status={resp.status}")
 
-        resp_json = await resp.json(content_type=None)
+        try:
+            resp_json = await resp.json(content_type=None)
+        except asyncio.TimeoutError as err:
+            raise AemetTimeout(err) from err
         _LOGGER.debug("api_data: url=%s resp=%s", url, resp_json)
 
         if isinstance(resp_json, dict):

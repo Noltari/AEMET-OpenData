@@ -6,6 +6,10 @@ class AemetError(Exception):
     """Base class for AEMET OpenData errors."""
 
 
+class AemetTimeout(AemetError):
+    """Exception raised when API times out."""
+
+
 class AuthError(AemetError):
     """Exception raised when API denies access."""
 
