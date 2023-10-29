@@ -19,9 +19,8 @@ classifiers = [
   "Topic :: Home Automation",
 ]
 dependencies = [
-  "geopy",
-  "requests",
-  "urllib3"
+  "aiohttp",
+  "geopy"
 ]
 
 [project.urls]
