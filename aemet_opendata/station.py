@@ -55,18 +55,18 @@ class Station:
     coords: tuple[float, float]
     _datetime: datetime
     distance: float
-    dew_point: float | None
-    humidity: float | None
+    dew_point: float | None = None
+    humidity: float | None = None
     id: str
     name: str
-    precipitation: float | None
-    pressure: float | None
-    temp: float | None
-    temp_max: float | None
-    temp_min: float | None
-    wind_direction: float | None
-    wind_speed: float | None
-    wind_speed_max: float | None
+    precipitation: float | None = None
+    pressure: float | None = None
+    temp: float | None = None
+    temp_max: float | None = None
+    temp_min: float | None = None
+    wind_direction: float | None = None
+    wind_speed: float | None = None
+    wind_speed_max: float | None = None
     zoneinfo: ZoneInfo
 
     def __init__(self, data: dict[str, Any], legacy: bool = False) -> None:
