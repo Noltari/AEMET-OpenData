@@ -1,4 +1,5 @@
 """Get AEMET OpenData town daily forecast example."""
+
 import asyncio
 import timeit
 

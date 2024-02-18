@@ -223,9 +223,9 @@ class HourlyForecast:
             weather[AOD_CONDITION] = forecast.get_condition()
             weather[AOD_HUMIDITY] = forecast.get_humidity()
             weather[AOD_PRECIPITATION] = forecast.get_precipitation()
-            weather[
-                AOD_PRECIPITATION_PROBABILITY
-            ] = forecast.get_precipitation_probability()
+            weather[AOD_PRECIPITATION_PROBABILITY] = (
+                forecast.get_precipitation_probability()
+            )
             weather[AOD_TEMP] = forecast.get_temp()
             weather[AOD_RAIN] = forecast.get_rain()
             weather[AOD_RAIN_PROBABILITY] = forecast.get_rain_probability()

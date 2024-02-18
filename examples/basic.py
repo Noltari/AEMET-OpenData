@@ -1,4 +1,5 @@
 """Basic AEMET OpenData client example."""
+
 import asyncio
 import timeit
 

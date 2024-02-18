@@ -1,4 +1,5 @@
 """Get AEMET OpenData town data by coords example."""
+
 import asyncio
 import timeit
 
