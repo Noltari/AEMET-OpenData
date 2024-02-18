@@ -1,6 +1,6 @@
 """AEMET OpenData Forecast."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Final
 
 from .const import (
@@ -53,7 +53,8 @@ from .const import (
     AOD_TEMP,
     AOD_TEMP_MAX,
     AOD_TEMP_MIN,
-    AOD_TIMESTAMP,
+    AOD_TIMESTAMP_LOCAL,
+    AOD_TIMESTAMP_UTC,
     AOD_UV_INDEX,
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
@@ -311,9 +312,13 @@ class DailyForecastValue(ForecastValue):
         """Return Town daily forecast minimum temperature."""
         return self.temp_min
 
-    def get_timestamp(self) -> str:
-        """Return Town daily forecast timestamp."""
+    def get_timestamp_local(self) -> str:
+        """Return Town daily forecast local timestamp."""
         return self._datetime.isoformat()
+
+    def get_timestamp_utc(self) -> str:
+        """Return Town daily forecast UTC timestamp."""
+        return self._datetime.astimezone(timezone.utc).isoformat()
 
     def get_uv_index(self) -> int | None:
         """Return Town daily forecast UV index."""
@@ -338,7 +343,8 @@ class DailyForecastValue(ForecastValue):
             AOD_PRECIPITATION_PROBABILITY: self.get_precipitation_prob(),
             AOD_TEMP_MAX: self.get_temp_max(),
             AOD_TEMP_MIN: self.get_temp_min(),
-            AOD_TIMESTAMP: self.get_timestamp(),
+            AOD_TIMESTAMP_LOCAL: self.get_timestamp_local(),
+            AOD_TIMESTAMP_UTC: self.get_timestamp_utc(),
             AOD_UV_INDEX: self.get_uv_index(),
             AOD_WIND_DIRECTION: self.get_wind_direction(),
             AOD_WIND_SPEED: self.get_wind_speed(),
@@ -549,9 +555,13 @@ class HourlyForecastValue(ForecastValue):
         """Return Town hourly forecast temperature."""
         return self.temp
 
-    def get_timestamp(self) -> str:
-        """Return Town hourly forecast timestamp."""
+    def get_timestamp_local(self) -> str:
+        """Return Town hourly forecast local timestamp."""
         return self._datetime.isoformat()
+
+    def get_timestamp_utc(self) -> str:
+        """Return Town hourly forecast UTC timestamp."""
+        return self._datetime.astimezone(timezone.utc).isoformat()
 
     def get_wind_direction(self) -> float | None:
         """Return Town hourly forecast wind direction."""
@@ -581,7 +591,8 @@ class HourlyForecastValue(ForecastValue):
             AOD_SUNRISE: self.get_sunrise(),
             AOD_SUNSET: self.get_sunset(),
             AOD_TEMP: self.get_temp(),
-            AOD_TIMESTAMP: self.get_timestamp(),
+            AOD_TIMESTAMP_LOCAL: self.get_timestamp_local(),
+            AOD_TIMESTAMP_UTC: self.get_timestamp_utc(),
             AOD_WIND_DIRECTION: self.get_wind_direction(),
             AOD_WIND_SPEED: self.get_wind_speed(),
             AOD_WIND_SPEED_MAX: self.get_wind_speed_max(),

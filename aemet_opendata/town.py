@@ -1,6 +1,6 @@
 """AEMET OpenData Town."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -37,7 +37,8 @@ from .const import (
     AOD_SNOW_PROBABILITY,
     AOD_STORM_PROBABILITY,
     AOD_TEMP,
-    AOD_TIMESTAMP,
+    AOD_TIMESTAMP_LOCAL,
+    AOD_TIMESTAMP_UTC,
     AOD_TIMEZONE,
     AOD_UV_INDEX,
     AOD_WIND_DIRECTION,
@@ -96,9 +97,13 @@ class DailyForecast:
             return leg_forecast
         return None
 
-    def get_timestamp(self) -> str:
+    def get_timestamp_local(self) -> str:
         """Return Town daily forecast timestamp."""
         return self._datetime.isoformat()
+
+    def get_timestamp_utc(self) -> str:
+        """Return Town daily forecast timestamp."""
+        return self._datetime.astimezone(timezone.utc).isoformat()
 
     def get_timezone(self) -> ZoneInfo:
         """Return Town daily forecast timezone."""
@@ -108,7 +113,8 @@ class DailyForecast:
         """Return Town daily forecast data."""
         data: dict[str, Any] = {
             AOD_FORECAST: [],
-            AOD_TIMESTAMP: self.get_timestamp(),
+            AOD_TIMESTAMP_LOCAL: self.get_timestamp_local(),
+            AOD_TIMESTAMP_UTC: self.get_timestamp_utc(),
             AOD_TIMEZONE: self.get_timezone(),
         }
 
@@ -189,6 +195,14 @@ class HourlyForecast:
         """Return Town hourly forecast timestamp."""
         return self._datetime.isoformat()
 
+    def get_timestamp_local(self) -> str:
+        """Return Town daily forecast timestamp."""
+        return self._datetime.isoformat()
+
+    def get_timestamp_utc(self) -> str:
+        """Return Town daily forecast timestamp."""
+        return self._datetime.astimezone(timezone.utc).isoformat()
+
     def get_timezone(self) -> ZoneInfo:
         """Return Town hourly forecast timezone."""
         return self.zoneinfo
@@ -197,7 +211,8 @@ class HourlyForecast:
         """Return Town hourly forecast data."""
         data: dict[str, Any] = {
             AOD_FORECAST: [],
-            AOD_TIMESTAMP: self.get_timestamp(),
+            AOD_TIMESTAMP_LOCAL: self.get_timestamp_local(),
+            AOD_TIMESTAMP_UTC: self.get_timestamp_utc(),
             AOD_TIMEZONE: self.get_timezone(),
         }
 

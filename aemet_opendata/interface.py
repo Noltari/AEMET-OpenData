@@ -33,7 +33,7 @@ from .const import (
     AOD_STATION,
     AOD_STORM_PROBABILITY,
     AOD_TEMP,
-    AOD_TIMESTAMP,
+    AOD_TIMESTAMP_UTC,
     AOD_TOWN,
     AOD_UV_INDEX,
     AOD_WEATHER,
@@ -233,7 +233,7 @@ class AEMET:
         if weather is not None:
             data[AOD_WEATHER] = weather
 
-        data[AOD_TIMESTAMP] = get_current_datetime().isoformat()
+        data[AOD_TIMESTAMP_UTC] = get_current_datetime().isoformat()
 
         return data
 

@@ -36,7 +36,7 @@ from .const import (
     AOD_TEMP,
     AOD_TEMP_MAX,
     AOD_TEMP_MIN,
-    AOD_TIMESTAMP,
+    AOD_TIMESTAMP_UTC,
     AOD_TIMEZONE,
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
@@ -146,8 +146,8 @@ class Station:
         """Return Station minimum temperature."""
         return self.temp_min
 
-    def get_timestamp(self) -> str:
-        """Return Station timestamp."""
+    def get_timestamp_utc(self) -> str:
+        """Return Station UTC timestamp."""
         return self._datetime.isoformat()
 
     def get_timezone(self) -> ZoneInfo:
@@ -229,7 +229,7 @@ class Station:
             AOD_ID: self.get_id(),
             AOD_NAME: self.get_name(),
             AOD_OUTDATED: self.get_outdated(),
-            AOD_TIMESTAMP: self.get_timestamp(),
+            AOD_TIMESTAMP_UTC: self.get_timestamp_utc(),
             AOD_TIMEZONE: self.get_timezone(),
         }
 
