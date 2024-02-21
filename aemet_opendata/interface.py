@@ -138,6 +138,8 @@ class AEMET:
                 timeout=API_TIMEOUT,
                 headers=self.headers,
             )
+        except asyncio.TimeoutError as err:
+            raise AemetTimeout(err) from err
         except ClientError as err:
             raise AemetError(err) from err
 
@@ -185,6 +187,8 @@ class AEMET:
                 url,
                 timeout=API_TIMEOUT,
             )
+        except asyncio.TimeoutError as err:
+            raise AemetTimeout(err) from err
         except ClientError as err:
             raise AemetError(err) from err
 
