@@ -1,7 +1,7 @@
 """Client for the AEMET OpenData REST API."""
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import logging
 from typing import Any, cast
 
@@ -74,16 +74,6 @@ class ConnectionOptions:
 
     api_key: str
     station_data: bool = False
-    legacy_data: bool = False
-
-
-@dataclass
-class LegacyWeather:
-    """Legacy class for AEMET weather data."""
-
-    daily: dict[str, Any] = field(default_factory=dict)
-    hourly: dict[str, Any] = field(default_factory=dict)
-    station: dict[str, Any] = field(default_factory=dict)
 
 
 class AEMET:
@@ -94,7 +84,6 @@ class AEMET:
     coords: tuple[float, float] | None
     dist_hp: bool
     headers: dict[str, Any]
-    legacy: dict[str, Any]
     options: ConnectionOptions
     station: Station | None
     town: Town | None
@@ -117,11 +106,6 @@ class AEMET:
         self.headers = {
             "Cache-Control": "no-cache",
             "api_key": options.api_key,
-        }
-        self.legacy = {
-            "daily": None,
-            "hourly": None,
-            "station": None,
         }
         self.options = options
         self.station = None
@@ -210,14 +194,6 @@ class AEMET:
                 raise ApiError("API data error")
 
         return cast(dict[str, Any], resp_json)
-
-    def legacy_weather(self) -> LegacyWeather:
-        """Return legacy weather data."""
-        return LegacyWeather(
-            self.legacy["daily"],
-            self.legacy["hourly"],
-            self.legacy["station"],
-        )
 
     def raw_data(self) -> dict[str, Any]:
         """Return raw AEMET OpenData API data."""
@@ -415,15 +391,14 @@ class AEMET:
 
         self.coords = coords
         if station_data is not None:
-            self.station = Station(station_data, self.options.legacy_data)
-        self.town = Town(town_data, self.options.legacy_data)
+            self.station = Station(station_data)
+        self.town = Town(town_data)
 
     async def update_daily(self) -> None:
         """Update AEMET OpenData town daily forecast."""
         if self.town is not None:
             town_id = self.town.get_id()
             daily = await self.get_specific_forecast_town_daily(town_id)
-            self.legacy["daily"] = daily
             self.town.update_daily(daily)
 
     async def update_hourly(self) -> None:
@@ -431,7 +406,6 @@ class AEMET:
         if self.town is not None:
             town_id = self.town.get_id()
             hourly = await self.get_specific_forecast_town_hourly(town_id)
-            self.legacy["hourly"] = hourly
             self.town.update_hourly(hourly)
 
     async def update_station(self) -> None:
@@ -439,7 +413,6 @@ class AEMET:
         if self.station is not None:
             station_id = self.station.get_id()
             station = await self.get_conventional_observation_station_data(station_id)
-            self.legacy["station"] = station
             self.station.update_samples(station)
 
     async def update(self) -> None:

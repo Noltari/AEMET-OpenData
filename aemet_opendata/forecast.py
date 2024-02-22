@@ -225,13 +225,8 @@ class DailyForecastValue(ForecastValue):
     wind_direction: float | None
     wind_speed: float | None
 
-    def __init__(
-        self, data: dict[str, Any], dt: datetime, legacy: bool = False
-    ) -> None:
+    def __init__(self, data: dict[str, Any], dt: datetime) -> None:
         """Init AEMET OpenData Town Daily Forecast."""
-        if legacy:
-            self.periods = [API_PERIOD_FULL_DAY]
-
         condition = self.parse_value(data[AEMET_ATTR_SKY_STATE])
         if condition is None or not condition:
             raise ValueError(f"DailyForecastValue {dt}")
@@ -250,7 +245,6 @@ class DailyForecastValue(ForecastValue):
         self.humidity_min = int(
             self.parse_value(data[AEMET_ATTR_HUMIDITY], key=AEMET_ATTR_MIN)
         )
-        self.legacy = legacy
         self.precipitation_prob = int(
             self.parse_value(data[AEMET_ATTR_PRECIPITATION_PROBABILITY])
         )
@@ -394,9 +388,7 @@ class HourlyForecastValue(ForecastValue):
     wind_speed: float | None
     wind_speed_max: float | None
 
-    def __init__(
-        self, data: dict[str, Any], dt: datetime, hour: int, legacy: bool = False
-    ) -> None:
+    def __init__(self, data: dict[str, Any], dt: datetime, hour: int) -> None:
         """Init AEMET OpenData Town Hourly Forecast."""
         condition = self.parse_value(data[AEMET_ATTR_SKY_STATE], hour)
         if condition is None:
@@ -404,7 +396,6 @@ class HourlyForecastValue(ForecastValue):
 
         self.condition = self.parse_condition(condition)
         self._datetime = dt.replace(hour=hour)
-        self.legacy = legacy
         self.sunrise = str(data[AEMET_ATTR_SUN_RISE])
         self.sunset = str(data[AEMET_ATTR_SUN_SET])
 

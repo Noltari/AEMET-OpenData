@@ -69,7 +69,7 @@ class Station:
     wind_speed_max: float | None = None
     zoneinfo: ZoneInfo
 
-    def __init__(self, data: dict[str, Any], legacy: bool = False) -> None:
+    def __init__(self, data: dict[str, Any]) -> None:
         """Init AEMET OpenData Station."""
 
         self.altitude = float(data[AEMET_ATTR_STATION_ALTITUDE])
@@ -79,13 +79,8 @@ class Station:
         )
         self.distance = float(data[ATTR_DISTANCE])
         self.id = str(data[AEMET_ATTR_IDEMA])
-        self.legacy = legacy
         self.name = str(data[AEMET_ATTR_STATION_LOCATION])
-
-        if legacy:
-            self.zoneinfo = ZoneInfo("UTC")
-        else:
-            self.zoneinfo = timezone_from_coords(self.coords)
+        self.zoneinfo = timezone_from_coords(self.coords)
 
         self.update_sample(data)
 
