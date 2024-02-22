@@ -64,7 +64,7 @@ score = false
 [tool.pylint.FORMAT]
 expected-line-ending-format = "LF"
 
-[tool.ruff]
+[tool.ruff.lint]
 select = [
     "D",  # docstrings
     "E",  # pycodestyle
@@ -79,7 +79,7 @@ ignore = [
     "D213",  # Multi-line docstring summary should start at the second line
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-sort-within-sections = true
 combine-as-imports = true
 split-on-trailing-comma = false
