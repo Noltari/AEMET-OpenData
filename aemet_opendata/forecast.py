@@ -596,15 +596,20 @@ class HourlyForecastValue(ForecastValue):
     ) -> Any:
         """Parse Town hourly forecast interval value from data."""
         period_offset = None
+
         for value in values:
             if key not in value:
                 continue
             period = value[AEMET_ATTR_PERIOD]
             period_start = int(period[0:API_PERIOD_SPLIT])
-            if period_offset is None or period_start < period_offset:
-                period_offset = period_start
+            period_end = int(period[API_PERIOD_SPLIT : API_PERIOD_SPLIT * 2])
+            if period_end < period_start:
+                if period_offset is None or period_end < period_offset:
+                    period_offset = period_end
+
         if period_offset is None:
             period_offset = 0
+
         for value in values:
             if key not in value:
                 continue
@@ -619,6 +624,7 @@ class HourlyForecastValue(ForecastValue):
                     hour = hour + API_PERIOD_24H
             if period_start <= hour < period_end:
                 return None if not value[key] else value[key]
+
         return None
 
     def parse_value(self, values: Any, hour: int, key: str = AEMET_ATTR_VALUE) -> Any:
