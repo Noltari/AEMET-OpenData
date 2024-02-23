@@ -4,14 +4,7 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .const import (
-    AEMET_ATTR_PERIOD,
-    AEMET_ATTR_VALUE,
-    API_ID_PFX,
-    API_PERIOD_24H,
-    API_PERIOD_FULL_DAY,
-    API_PERIOD_SPLIT,
-)
+from .const import API_ID_PFX
 
 TZ_UTC = ZoneInfo("UTC")
 
@@ -29,56 +22,6 @@ def dict_nested_value(data: dict[str, Any] | None, keys: list[str] | None) -> An
 def get_current_datetime(tz: ZoneInfo = TZ_UTC) -> datetime:
     """Return current datetime in UTC."""
     return datetime.now(tz=tz).replace(minute=0, second=0, microsecond=0)
-
-
-def get_forecast_day_value(
-    values: dict[str, Any] | list[Any], key: str = AEMET_ATTR_VALUE
-) -> Any:
-    """Get day value from forecast."""
-    if isinstance(values, list):
-        if len(values) > 1:
-            for value in values:
-                if key not in value:
-                    continue
-                if value[AEMET_ATTR_PERIOD] == API_PERIOD_FULL_DAY:
-                    return value[key]
-        else:
-            if key in values[0]:
-                return values[0][key]
-    if isinstance(values, dict):
-        if key in values:
-            return values[key]
-    return None
-
-
-def get_forecast_hour_value(values: Any, hour: int, key: str = AEMET_ATTR_VALUE) -> Any:
-    """Get hour value from forecast."""
-    for value in values:
-        if key not in value:
-            continue
-        if int(value[AEMET_ATTR_PERIOD]) == hour:
-            return None if not value[key] else value[key]
-    return None
-
-
-def get_forecast_interval_value(
-    values: Any, hour: int, key: str = AEMET_ATTR_VALUE
-) -> Any:
-    """Get hour value from forecast interval."""
-    for value in values:
-        if key not in value:
-            continue
-        period_start = int(value[AEMET_ATTR_PERIOD][0:API_PERIOD_SPLIT])
-        period_end = int(
-            value[AEMET_ATTR_PERIOD][API_PERIOD_SPLIT : API_PERIOD_SPLIT * 2]
-        )
-        if period_end < period_start:
-            period_end = period_end + API_PERIOD_24H
-            if hour == 0:
-                hour = hour + API_PERIOD_24H
-        if period_start <= hour < period_end:
-            return None if not value[key] else value[key]
-    return None
 
 
 def split_coordinate(coordinate: str) -> str:
