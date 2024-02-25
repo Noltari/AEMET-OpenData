@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import Final
 
 AEMET_ATTR_DATA: Final[str] = "datos"
+AEMET_ATTR_DATA_ENTRY: Final[str] = "dato"
 AEMET_ATTR_DATE: Final[str] = "fecha"
 AEMET_ATTR_DAY: Final[str] = "dia"
 AEMET_ATTR_DIRECTION: Final[str] = "direccion"
@@ -11,6 +12,7 @@ AEMET_ATTR_ELABORATED: Final[str] = "elaborado"
 AEMET_ATTR_FEEL_TEMPERATURE: Final[str] = "sensTermica"
 AEMET_ATTR_FORECAST: Final[str] = "prediccion"
 AEMET_ATTR_GUST: Final[str] = "rachaMax"
+AEMET_ATTR_HOUR: Final[str] = "hora"
 AEMET_ATTR_HUMIDITY: Final[str] = "humedadRelativa"
 AEMET_ATTR_ID: Final[str] = "id"
 AEMET_ATTR_IDEMA: Final[str] = "idema"
@@ -81,6 +83,7 @@ AOD_FORECAST: Final[str] = "forecast"
 AOD_FORECAST_CURRENT: Final[str] = "forecast-current"
 AOD_FORECAST_DAILY: Final[str] = "forecast-daily"
 AOD_FORECAST_HOURLY: Final[str] = "forecast-hourly"
+AOD_FORECAST_TWICE_DAILY: Final[str] = "forecast-twice-daily"
 AOD_HUMIDITY: Final[str] = "humidity"
 AOD_HUMIDITY_MAX: Final[str] = "humidity-max"
 AOD_HUMIDITY_MIN: Final[str] = "humidity-min"
@@ -116,6 +119,9 @@ AOD_WIND_SPEED_MAX: Final[str] = "wind-speed-max"
 API_ID_PFX: Final[str] = "id"
 API_MIN_STATION_DISTANCE_KM: Final[int] = 40
 API_MIN_TOWN_DISTANCE_KM: Final[int] = 40
+API_PERIOD_6H: Final[int] = 6
+API_PERIOD_12H: Final[int] = 12
+API_PERIOD_18H: Final[int] = 18
 API_PERIOD_24H: Final[int] = 24
 API_PERIOD_FULL_DAY: Final[str] = "00-24"
 API_PERIOD_HALF_1_DAY: Final[str] = "00-12"

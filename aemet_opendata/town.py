@@ -25,6 +25,7 @@ from .const import (
     AOD_FORECAST_CURRENT,
     AOD_FORECAST_DAILY,
     AOD_FORECAST_HOURLY,
+    AOD_FORECAST_TWICE_DAILY,
     AOD_HUMIDITY,
     AOD_ID,
     AOD_NAME,
@@ -44,10 +45,19 @@ from .const import (
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
     AOD_WIND_SPEED_MAX,
+    API_PERIOD_6H,
+    API_PERIOD_12H,
+    API_PERIOD_18H,
+    API_PERIOD_24H,
     ATTR_DATA,
     ATTR_DISTANCE,
 )
-from .forecast import DailyForecastValue, HourlyForecastValue
+from .forecast import (
+    DailyForecastValue,
+    DailyForecastValueH1,
+    DailyForecastValueH2,
+    HourlyForecastValue,
+)
 from .helpers import get_current_datetime, parse_api_timestamp, timezone_from_coords
 
 _LOGGER = logging.getLogger(__name__)
@@ -66,11 +76,15 @@ class DailyForecast:
         self.forecast: list[DailyForecastValue] = []
         self.zoneinfo = zoneinfo
 
-        cur_dt = get_current_datetime(zoneinfo)
+        self.init_forecast(data)
+
+    def init_forecast(self, data: dict[str, Any]) -> None:
+        """Init forecast data."""
+        cur_dt = get_current_datetime(self.zoneinfo)
         cur_day = cur_dt.date()
 
         for day_data in data[AEMET_ATTR_FORECAST][AEMET_ATTR_DAY]:
-            day = parse_api_timestamp(day_data[AEMET_ATTR_DATE], zoneinfo)
+            day = parse_api_timestamp(day_data[AEMET_ATTR_DATE], self.zoneinfo)
             if cur_day <= day.date():
                 try:
                     self.forecast += [DailyForecastValue(day_data, day)]
@@ -126,12 +140,38 @@ class DailyForecast:
         forecast = self.get_current_forecast()
         if forecast is not None:
             weather[AOD_CONDITION] = forecast.get_condition()
-            weather[AOD_PRECIPITATION_PROBABILITY] = forecast.get_precipitation_prob()
+            weather[AOD_PRECIPITATION_PROBABILITY] = forecast.get_precipitation_probability()
             weather[AOD_UV_INDEX] = forecast.get_uv_index()
             weather[AOD_WIND_DIRECTION] = forecast.get_wind_direction()
             weather[AOD_WIND_SPEED] = forecast.get_wind_speed()
 
         return weather
+
+
+class TwiceDailyForecast(DailyForecast):
+    """AEMET OpenData Town Twice Daily Forecast."""
+
+    def init_forecast(self, data: dict[str, Any]) -> None:
+        """Init forecast data."""
+        cur_dt = get_current_datetime(self.zoneinfo)
+        cur_day = cur_dt.date()
+
+        for day_data in data[AEMET_ATTR_FORECAST][AEMET_ATTR_DAY]:
+            day_h1 = parse_api_timestamp(day_data[AEMET_ATTR_DATE], self.zoneinfo)
+            if cur_day <= day_h1.date():
+                try:
+                    # First Half
+                    if cur_day == day_h1.date():
+                        parse_h1 = cur_dt.hour < API_PERIOD_12H
+                    else:
+                        parse_h1 = True
+                    if parse_h1:
+                        self.forecast += [DailyForecastValueH1(day_data, day_h1, [API_PERIOD_6H, API_PERIOD_12H])]
+                    # Second half
+                    day_h2 = day_h1.replace(hour=12)
+                    self.forecast += [DailyForecastValueH2(day_data, day_h2, [API_PERIOD_18H, API_PERIOD_24H])]
+                except ValueError as err:
+                    _LOGGER.debug(err)
 
 
 class HourlyForecast:
@@ -247,9 +287,11 @@ class Town:
     coords: tuple[float, float]
     daily: DailyForecast | None
     distance: float
+    hourly: HourlyForecast | None
     id: str
     name: str
     residents: int
+    twice_daily: TwiceDailyForecast | None
     zoneinfo: ZoneInfo
 
     def __init__(self, data: dict[str, Any]) -> None:
@@ -259,12 +301,13 @@ class Town:
             float(data[AEMET_ATTR_TOWN_LATITUDE_DECIMAL]),
             float(data[AEMET_ATTR_TOWN_LONGITUDE_DECIMAL]),
         )
-        self.daily: DailyForecast | None = None
+        self.daily = None
         self.distance = float(data[ATTR_DISTANCE])
-        self.hourly: HourlyForecast | None = None
+        self.hourly = None
         self.id = str(data[AEMET_ATTR_ID])
         self.name = str(data[AEMET_ATTR_NAME])
         self.residents = int(data[AEMET_ATTR_TOWN_RESIDENTS])
+        self.twice_daily = None
         self.zoneinfo = timezone_from_coords(self.coords)
 
     def get_altitude(self) -> int:
@@ -298,6 +341,9 @@ class Town:
     def update_daily(self, forecast: dict[str, Any]) -> None:
         """Update Town daily forecast."""
         self.daily = DailyForecast(forecast[ATTR_DATA][0], self.get_timezone())
+        self.twice_daily = TwiceDailyForecast(
+            forecast[ATTR_DATA][0], self.get_timezone()
+        )
 
     def update_hourly(self, forecast: dict[str, Any]) -> None:
         """Update Town hourly forecast."""
@@ -320,6 +366,9 @@ class Town:
 
         if self.hourly is not None:
             data[AOD_FORECAST_HOURLY] = self.hourly.data()
+
+        if self.twice_daily is not None:
+            data[AOD_FORECAST_TWICE_DAILY] = self.twice_daily.data()
 
         return data
 

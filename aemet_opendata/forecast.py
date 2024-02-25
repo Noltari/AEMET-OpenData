@@ -1,12 +1,15 @@
 """AEMET OpenData Forecast."""
 
 from datetime import datetime, timezone
+import logging
 from typing import Any, Final
 
 from .const import (
+    AEMET_ATTR_DATA_ENTRY,
     AEMET_ATTR_DIRECTION,
     AEMET_ATTR_FEEL_TEMPERATURE,
     AEMET_ATTR_HUMIDITY,
+    AEMET_ATTR_HOUR,
     AEMET_ATTR_MAX,
     AEMET_ATTR_MIN,
     AEMET_ATTR_PERIOD,
@@ -59,8 +62,12 @@ from .const import (
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
     AOD_WIND_SPEED_MAX,
+    API_PERIOD_6H,
+    API_PERIOD_12H,
+    API_PERIOD_18H,
     API_PERIOD_24H,
     API_PERIOD_FULL_DAY,
+    API_PERIOD_HALF_1_DAY,
     API_PERIOD_HALF_2_DAY,
     API_PERIOD_SPLIT,
 )
@@ -182,13 +189,172 @@ def hash_api_conditions(conditions_map: dict[str, list[str]]) -> dict[str, str]:
 CONDITIONS_DICT: Final[dict[str, str]] = hash_api_conditions(API_CONDITIONS_MAP)
 
 
+_LOGGER = logging.getLogger(__name__)
+
 class ForecastValue:
     """AEMET OpenData Town Forecast value."""
+
+    condition: str
+    _datetime: datetime
+    feel_temp: int | None
+    feel_temp_max: int | None
+    feel_temp_min: int | None
+    humidity: int | None
+    humidity_max: int | None
+    humidity_min: int | None
+    periods: list[str]
+    precipitation_probability: int | None
+    rain: float | None
+    rain_probability: int | None
+    snow: float | None
+    snow_probability: int | None
+    storm_probability: int | None
+    sunrise: str | None
+    sunset: str | None
+    temp: int | None
+    temp_max: int | None
+    temp_min: int | None
+    uv_index: int | None
+    wind_direction: float | None
+    wind_speed: float | None
+    wind_speed_max: float | None
+
+    def get_condition(self) -> str | None:
+        """Return forecast condition."""
+        return self.condition
+
+    def get_datetime(self) -> datetime:
+        """Return forecast datetime."""
+        return self._datetime
+
+    def get_feel_temp(self) -> int | None:
+        """Return forecast feel temperature."""
+        return self.feel_temp
+
+    def get_feel_temp_max(self) -> int:
+        """Return forecast maximum feel temperature."""
+        return self.feel_temp_max
+
+    def get_feel_temp_min(self) -> int:
+        """Return forecast minimum feel temperature."""
+        return self.feel_temp_min
+
+    def get_humidity(self) -> int | None:
+        """Return forecast humidity."""
+        return self.humidity
+
+    def get_humidity_max(self) -> int:
+        """Return forecast maximum humidity."""
+        return self.humidity_max
+
+    def get_humidity_min(self) -> int:
+        """Return forecast minimum humidity."""
+        return self.humidity_min
+
+    def get_precipitation(self) -> float | None:
+        """Return forecast precipitation."""
+        rain = self.get_rain()
+        snow = self.get_snow()
+        if rain is not None or snow is not None:
+            rain = rain or 0.0
+            snow = snow or 0.0
+            return rain + snow
+        return None
+
+    def get_precipitation_probability(self) -> int:
+        """Return forecast precipitation probability."""
+        return self.precipitation_probability
+
+    def get_rain(self) -> float | None:
+        """Return forecast rain."""
+        return self.rain
+
+    def get_rain_probability(self) -> int | None:
+        """Return forecast rain probability."""
+        return self.rain_probability
+
+    def get_snow(self) -> float | None:
+        """Return forecast snow."""
+        return self.snow
+
+    def get_snow_probability(self) -> int | None:
+        """Return forecast snow probability."""
+        return self.snow_probability
+
+    def get_storm_probability(self) -> int | None:
+        """Return forecast storm probability."""
+        return self.storm_probability
+
+    def get_sunrise(self) -> str:
+        """Return forecast sunrise."""
+        return self.sunrise
+
+    def get_sunset(self) -> str:
+        """Return forecast sunset."""
+        return self.sunset
+
+    def get_temp(self) -> int | None:
+        """Return forecast temperature."""
+        return self.temp
+
+    def get_temp_max(self) -> int:
+        """Return forecast maximum temperature."""
+        return self.temp_max
+
+    def get_temp_min(self) -> int:
+        """Return forecast minimum temperature."""
+        return self.temp_min
+
+    def get_timestamp_local(self) -> str:
+        """Return forecast local timestamp."""
+        return self._datetime.isoformat()
+
+    def get_timestamp_utc(self) -> str:
+        """Return forecast UTC timestamp."""
+        return self._datetime.astimezone(timezone.utc).isoformat()
+
+    def get_uv_index(self) -> int | None:
+        """Return forecast UV index."""
+        return self.uv_index
+
+    def get_wind_direction(self) -> float | None:
+        """Return forecast wind direction."""
+        return self.wind_direction
+
+    def get_wind_speed(self) -> float | None:
+        """Return forecast wind speed."""
+        return self.wind_speed
+
+    def get_wind_speed_max(self) -> float | None:
+        """Return forecast maximum wind speed."""
+        return self.wind_speed_max
 
     @classmethod
     def parse_condition(cls, condition: str) -> str:
         """Parse forecast condition from API to human readable."""
         return CONDITIONS_DICT.get(condition, condition)
+
+    def parse_period_value(
+        self, values: dict[str, Any] | list[Any], key: str = AEMET_ATTR_VALUE
+    ) -> Any:
+        """Parse Town daily forecast value from data."""
+        if isinstance(values, list):
+            if len(values) > 1:
+                for value in values:
+                    if key not in value:
+                        continue
+                    if isinstance(value[key], str) and not value[key]:
+                        continue
+                    for period in self.periods:
+                        if value[AEMET_ATTR_PERIOD] == period:
+                            return value[key]
+            else:
+                if key in values[0]:
+                    return values[0][key]
+        if isinstance(values, dict):
+            if key in values:
+                return values[key]
+        return None
 
     @classmethod
     def parse_precipitation(cls, precipitation: str | None) -> float | None:
@@ -208,22 +374,10 @@ class ForecastValue:
 class DailyForecastValue(ForecastValue):
     """AEMET OpenData Town Daily Forecast value."""
 
-    condition: str
-    _datetime: datetime
-    feel_temp_max: int
-    feel_temp_min: int
-    humidity_max: int
-    humidity_min: int
-    periods: list[str] = [
+    periods = [
         API_PERIOD_FULL_DAY,
         API_PERIOD_HALF_2_DAY,
     ]
-    precipitation_prob: int
-    temp_max: int
-    temp_min: int
-    uv_index: int | None
-    wind_direction: float | None
-    wind_speed: float | None
 
     def __init__(self, data: dict[str, Any], dt: datetime) -> None:
         """Init AEMET OpenData Town Daily Forecast."""
@@ -234,33 +388,33 @@ class DailyForecastValue(ForecastValue):
         self.condition = self.parse_condition(condition)
         self._datetime = dt
         self.feel_temp_max = int(
-            self.parse_value(data[AEMET_ATTR_FEEL_TEMPERATURE], key=AEMET_ATTR_MAX)
+            self.parse_value(data[AEMET_ATTR_FEEL_TEMPERATURE], AEMET_ATTR_MAX)
         )
         self.feel_temp_min = int(
-            self.parse_value(data[AEMET_ATTR_FEEL_TEMPERATURE], key=AEMET_ATTR_MIN)
+            self.parse_value(data[AEMET_ATTR_FEEL_TEMPERATURE], AEMET_ATTR_MIN)
         )
         self.humidity_max = int(
-            self.parse_value(data[AEMET_ATTR_HUMIDITY], key=AEMET_ATTR_MAX)
+            self.parse_value(data[AEMET_ATTR_HUMIDITY], AEMET_ATTR_MAX)
         )
         self.humidity_min = int(
-            self.parse_value(data[AEMET_ATTR_HUMIDITY], key=AEMET_ATTR_MIN)
+            self.parse_value(data[AEMET_ATTR_HUMIDITY], AEMET_ATTR_MIN)
         )
-        self.precipitation_prob = int(
+        self.precipitation_probability = int(
             self.parse_value(data[AEMET_ATTR_PRECIPITATION_PROBABILITY])
         )
         self.temp_max = int(
-            self.parse_value(data[AEMET_ATTR_TEMPERATURE], key=AEMET_ATTR_MAX)
+            self.parse_value(data[AEMET_ATTR_TEMPERATURE], AEMET_ATTR_MAX)
         )
         self.temp_min = int(
-            self.parse_value(data[AEMET_ATTR_TEMPERATURE], key=AEMET_ATTR_MIN)
+            self.parse_value(data[AEMET_ATTR_TEMPERATURE], AEMET_ATTR_MIN)
         )
         self.wind_direction = self.parse_wind_direction(
-            self.parse_value(data[AEMET_ATTR_WIND], key=AEMET_ATTR_DIRECTION),
+            self.parse_value(data[AEMET_ATTR_WIND], AEMET_ATTR_DIRECTION),
         )
 
         if self.wind_direction is not None:
             self.wind_speed = int(
-                self.parse_value(data[AEMET_ATTR_WIND], key=AEMET_ATTR_SPEED)
+                self.parse_value(data[AEMET_ATTR_WIND], AEMET_ATTR_SPEED)
             )
         else:
             self.wind_speed = None
@@ -270,62 +424,6 @@ class DailyForecastValue(ForecastValue):
         else:
             self.uv_index = None
 
-    def get_condition(self) -> str | None:
-        """Return Town daily forecast condition."""
-        return self.condition
-
-    def get_datetime(self) -> datetime:
-        """Return Town daily forecast datetime."""
-        return self._datetime
-
-    def get_feel_temp_max(self) -> int:
-        """Return Town daily forecast maximum feel temperature."""
-        return self.feel_temp_max
-
-    def get_feel_temp_min(self) -> int:
-        """Return Town daily forecast minimum feel temperature."""
-        return self.feel_temp_min
-
-    def get_humidity_max(self) -> int:
-        """Return Town daily forecast maximum humidity."""
-        return self.humidity_max
-
-    def get_humidity_min(self) -> int:
-        """Return Town daily forecast minimum humidity."""
-        return self.humidity_min
-
-    def get_precipitation_prob(self) -> int:
-        """Return Town daily forecast precipitation probability."""
-        return self.precipitation_prob
-
-    def get_temp_max(self) -> int:
-        """Return Town daily forecast maximum temperature."""
-        return self.temp_max
-
-    def get_temp_min(self) -> int:
-        """Return Town daily forecast minimum temperature."""
-        return self.temp_min
-
-    def get_timestamp_local(self) -> str:
-        """Return Town daily forecast local timestamp."""
-        return self._datetime.isoformat()
-
-    def get_timestamp_utc(self) -> str:
-        """Return Town daily forecast UTC timestamp."""
-        return self._datetime.astimezone(timezone.utc).isoformat()
-
-    def get_uv_index(self) -> int | None:
-        """Return Town daily forecast UV index."""
-        return self.uv_index
-
-    def get_wind_direction(self) -> float | None:
-        """Return Town daily forecast wind direction."""
-        return self.wind_direction
-
-    def get_wind_speed(self) -> float | None:
-        """Return Town daily forecast wind speed."""
-        return self.wind_speed
-
     def data(self) -> dict[str, Any]:
         """Return Town daily forecast data."""
         data: dict[str, Any] = {
@@ -334,7 +432,7 @@ class DailyForecastValue(ForecastValue):
             AOD_FEEL_TEMP_MIN: self.get_feel_temp_min(),
             AOD_HUMIDITY_MAX: self.get_humidity_max(),
             AOD_HUMIDITY_MIN: self.get_humidity_min(),
-            AOD_PRECIPITATION_PROBABILITY: self.get_precipitation_prob(),
+            AOD_PRECIPITATION_PROBABILITY: self.get_precipitation_probability(),
             AOD_TEMP_MAX: self.get_temp_max(),
             AOD_TEMP_MIN: self.get_temp_min(),
             AOD_TIMESTAMP_LOCAL: self.get_timestamp_local(),
@@ -369,24 +467,144 @@ class DailyForecastValue(ForecastValue):
         return None
 
 
+class PartialDailyValue(ForecastValue):
+    """AEMET OpenData Town Partial Daily Forecast value."""
+
+    def __init__(self, data: dict[str, Any], dt: datetime, keys: list[int]) -> None:
+        """Init AEMET OpenData Town Partial Daily Forecast."""
+        condition = self.parse_period_value(data[AEMET_ATTR_SKY_STATE])
+        if condition is None or not condition:
+            raise ValueError(f"PartialDailyValue {dt}: condition")
+
+        self.condition = self.parse_condition(condition)
+        self._datetime = dt
+
+        feel_temp = self.parse_hours_list(data[AEMET_ATTR_FEEL_TEMPERATURE], keys)
+        if feel_temp is not None:
+            self.feel_temp_max = feel_temp[1]
+            self.feel_temp_min = feel_temp[0]
+        else:
+            raise ValueError(f"PartialDailyValue {dt}: feel_temp")
+
+        humidity = self.parse_hours_list(data[AEMET_ATTR_HUMIDITY], keys)
+        if humidity is not None:
+            self.humidity_max = humidity[1]
+            self.humidity_min = humidity[0]
+        else:
+            raise ValueError(f"PartialDailyValue {dt}: humidity")
+
+        precipitation_probability = self.parse_period_value(data[AEMET_ATTR_PRECIPITATION_PROBABILITY])
+        if precipitation_probability is not None:
+            self.precipitation_probability = int(precipitation_probability)
+        else:
+            self.precipitation_probability = None
+
+        temp = self.parse_hours_list(data[AEMET_ATTR_TEMPERATURE], keys)
+        if temp is not None:
+            self.temp_max = temp[1]
+            self.temp_min = temp[0]
+        else:
+            raise ValueError(f"PartialDailyValue {dt}: temp")
+
+        wind_direction = self.parse_period_value(data[AEMET_ATTR_WIND], AEMET_ATTR_DIRECTION)
+        if wind_direction is not None:
+            self.wind_direction = self.parse_wind_direction(wind_direction)
+        else:
+            self.wind_direction = None
+
+        if self.wind_direction is not None:
+            self.wind_speed = int(
+                self.parse_period_value(data[AEMET_ATTR_WIND], AEMET_ATTR_SPEED)
+            )
+        else:
+            self.wind_speed = None
+
+        if AEMET_ATTR_UV_MAX in data:
+            self.uv_index = int(data[AEMET_ATTR_UV_MAX])
+        else:
+            self.uv_index = None
+
+    def data(self) -> dict[str, Any]:
+        """Return Town partial daily forecast data."""
+        data: dict[str, Any] = {
+            AOD_CONDITION: self.get_condition(),
+            AOD_FEEL_TEMP_MAX: self.get_feel_temp_max(),
+            AOD_FEEL_TEMP_MIN: self.get_feel_temp_min(),
+            AOD_HUMIDITY_MAX: self.get_humidity_max(),
+            AOD_HUMIDITY_MIN: self.get_humidity_min(),
+            AOD_PRECIPITATION_PROBABILITY: self.get_precipitation_probability(),
+            AOD_TEMP_MAX: self.get_temp_max(),
+            AOD_TEMP_MIN: self.get_temp_min(),
+            AOD_TIMESTAMP_LOCAL: self.get_timestamp_local(),
+            AOD_TIMESTAMP_UTC: self.get_timestamp_utc(),
+            AOD_UV_INDEX: self.get_uv_index(),
+            AOD_WIND_DIRECTION: self.get_wind_direction(),
+            AOD_WIND_SPEED: self.get_wind_speed(),
+        }
+
+        return data
+
+    def parse_period_value(
+        self, values: dict[str, Any] | list[Any], key: str = AEMET_ATTR_VALUE
+    ) -> Any:
+        """Parse Town partial daily forecast value from data."""
+        if isinstance(values, list):
+            if len(values) > 1:
+                for value in values:
+                    if key not in value:
+                        continue
+                    if isinstance(value[key], str) and not value[key]:
+                        continue
+                    for period in self.periods:
+                        if value[AEMET_ATTR_PERIOD] == period:
+                            return value[key]
+            else:
+                if key in values[0]:
+                    return values[0][key]
+        if isinstance(values, dict):
+            if key in values:
+                return values[key]
+        return None
+
+    @classmethod
+    def parse_hours_list(
+        cls, values: dict[str, Any] | list[Any], keys: list[int] | None = None
+    ) -> tuple[int, int] | None:
+        """Parse Town partial day data tuple."""
+        parsed_values: list[int] = []
+        data: list[dict[str, Any]] = values.get(AEMET_ATTR_DATA_ENTRY, [])
+        _LOGGER.error("parse_hour_value: %s", data)
+        for value_dict in data:
+            _LOGGER.error(value_dict)
+            hour = value_dict.get(AEMET_ATTR_HOUR)
+            if hour in keys:
+                parsed_value = value_dict.get(AEMET_ATTR_VALUE)
+                if parsed_value is not None:
+                    parsed_values += [int(parsed_value)]
+        _LOGGER.error("parsed_values: %s", parsed_values)
+        if len(parsed_values) >= 2:
+            return (min(parsed_values), max(parsed_values))
+        return None
+
+
+class DailyForecastValueH1(PartialDailyValue):
+    """AEMET OpenData Town Daily Forecast H1 value."""
+
+    periods = [
+        API_PERIOD_HALF_1_DAY,
+    ]
+
+
+class DailyForecastValueH2(PartialDailyValue):
+    """AEMET OpenData Town Daily Forecast H2 value."""
+
+    periods = [
+        API_PERIOD_HALF_2_DAY,
+    ]
+
+
 class HourlyForecastValue(ForecastValue):
     """AEMET OpenData Town Hourly Forecast value."""
-
-    condition: str
-    _datetime: datetime
-    feel_temp: int | None
-    humidity: int | None
-    rain: float | None
-    rain_probability: int | None
-    snow: float | None
-    snow_probability: int | None
-    storm_probability: int | None
-    sunrise: str
-    sunset: str
-    temp: int | None
-    wind_direction: float | None
-    wind_speed: float | None
-    wind_speed_max: float | None
 
     def __init__(self, data: dict[str, Any], dt: datetime, hour: int) -> None:
         """Init AEMET OpenData Town Hourly Forecast."""
@@ -458,7 +676,7 @@ class HourlyForecastValue(ForecastValue):
         wind_direction = self.parse_value(
             data[AEMET_ATTR_WIND_GUST],
             hour,
-            key=AEMET_ATTR_DIRECTION,
+            AEMET_ATTR_DIRECTION,
         )
         if wind_direction is not None:
             self.wind_direction = self.parse_wind_direction(wind_direction[0])
@@ -468,7 +686,7 @@ class HourlyForecastValue(ForecastValue):
         if self.wind_direction is not None:
             self.wind_speed = float(
                 self.parse_value(
-                    data[AEMET_ATTR_WIND_GUST], hour, key=AEMET_ATTR_SPEED
+                    data[AEMET_ATTR_WIND_GUST], hour, AEMET_ATTR_SPEED
                 )[0]
             )
             self.wind_speed_max = float(
@@ -478,93 +696,14 @@ class HourlyForecastValue(ForecastValue):
             self.wind_speed = None
             self.wind_speed_max = None
 
-    def get_condition(self) -> str:
-        """Return Town hourly forecast condition."""
-        return self.condition
-
-    def get_datetime(self) -> datetime:
-        """Return Town hourly forecast datetime."""
-        return self._datetime
-
-    def get_feel_temp(self) -> int | None:
-        """Return Town hourly forecast feel temperature."""
-        return self.feel_temp
-
-    def get_humidity(self) -> int | None:
-        """Return Town hourly forecast humidity."""
-        return self.humidity
-
-    def get_precipitation(self) -> float | None:
-        """Return Town hourly forecast precipitation."""
-        rain = self.get_rain()
-        snow = self.get_snow()
-        if rain is not None or snow is not None:
-            rain = rain or 0.0
-            snow = snow or 0.0
-            return rain + snow
-        return None
-
-    def get_precipitation_probability(self) -> int | None:
-        """Return Town hourly forecast precipitation probability."""
         rain_prob = self.get_rain_probability()
         snow_prob = self.get_snow_probability()
         if rain_prob is not None or snow_prob is not None:
             rain_prob = rain_prob or 0
             snow_prob = snow_prob or 0
-            return max(rain_prob, snow_prob)
-        return None
-
-    def get_rain(self) -> float | None:
-        """Return Town hourly forecast rain."""
-        return self.rain
-
-    def get_rain_probability(self) -> int | None:
-        """Return Town hourly forecast rain probability."""
-        return self.rain_probability
-
-    def get_snow(self) -> float | None:
-        """Return Town hourly forecast snow."""
-        return self.snow
-
-    def get_snow_probability(self) -> int | None:
-        """Return Town hourly forecast snow probability."""
-        return self.snow_probability
-
-    def get_storm_probability(self) -> int | None:
-        """Return Town hourly forecast storm probability."""
-        return self.storm_probability
-
-    def get_sunrise(self) -> str:
-        """Return Town hourly forecast sunrise."""
-        return self.sunrise
-
-    def get_sunset(self) -> str:
-        """Return Town hourly forecast sunset."""
-        return self.sunset
-
-    def get_temp(self) -> int | None:
-        """Return Town hourly forecast temperature."""
-        return self.temp
-
-    def get_timestamp_local(self) -> str:
-        """Return Town hourly forecast local timestamp."""
-        return self._datetime.isoformat()
-
-    def get_timestamp_utc(self) -> str:
-        """Return Town hourly forecast UTC timestamp."""
-        return self._datetime.astimezone(timezone.utc).isoformat()
-
-    def get_wind_direction(self) -> float | None:
-        """Return Town hourly forecast wind direction."""
-        return self.wind_direction
-
-    def get_wind_speed(self) -> float | None:
-        """Return Town hourly forecast wind speed."""
-        return self.wind_speed
-
-    def get_wind_speed_max(self) -> float | None:
-        """Return Town hourly forecast maximum wind speed."""
-        return self.wind_speed_max
+            self.precipitation_probability = max(rain_prob, snow_prob)
+        else:
+            self.precipitation_probability = None
 
     def data(self) -> dict[str, Any]:
         """Return Town hourly forecast data."""
