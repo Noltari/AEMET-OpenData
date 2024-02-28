@@ -59,6 +59,7 @@ from .const import (
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
     AOD_WIND_SPEED_MAX,
+    API_MAX_PERIOD_OFFSET,
     API_PERIOD_24H,
     API_PERIOD_FULL_DAY,
     API_PERIOD_HALF_2_DAY,
@@ -595,19 +596,28 @@ class HourlyForecastValue(ForecastValue):
         self, values: Any, hour: int, key: str = AEMET_ATTR_VALUE
     ) -> Any:
         """Parse Town hourly forecast interval value from data."""
-        period_offset = None
+        min_period_start = None
+        min_period_end = None
 
+        num_periods = 0
         for value in values:
             if key not in value:
                 continue
+            num_periods += 1
             period = value[AEMET_ATTR_PERIOD]
             period_start = int(period[0:API_PERIOD_SPLIT])
             period_end = int(period[API_PERIOD_SPLIT : API_PERIOD_SPLIT * 2])
+            if min_period_start is None or period_start < min_period_start:
+                min_period_start = period_start
             if period_end < period_start:
-                if period_offset is None or period_end < period_offset:
-                    period_offset = period_end
+                if min_period_end is None or period_end < min_period_end:
+                    min_period_end = period_end
 
-        if period_offset is None:
+        if min_period_end is not None and min_period_end <= API_MAX_PERIOD_OFFSET:
+            period_offset = min_period_end
+        elif min_period_start is not None and min_period_start <= API_MAX_PERIOD_OFFSET:
+            period_offset = min_period_start
+        else:
             period_offset = 0
 
         for value in values:
@@ -620,9 +630,9 @@ class HourlyForecastValue(ForecastValue):
             period_end -= period_offset
             if period_end < period_start:
                 period_end = period_end + API_PERIOD_24H
-                if hour == 0:
-                    hour = hour + API_PERIOD_24H
             if period_start <= hour < period_end:
+                    return None if not value[key] else value[key]
+            if num_periods == 1 and hour == period_end:
                 return None if not value[key] else value[key]
 
         return None

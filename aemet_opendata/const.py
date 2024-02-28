@@ -114,6 +114,7 @@ AOD_WIND_SPEED: Final[str] = "wind-speed"
 AOD_WIND_SPEED_MAX: Final[str] = "wind-speed-max"
 
 API_ID_PFX: Final[str] = "id"
+API_MAX_PERIOD_OFFSET: Final[int] = 2
 API_MIN_STATION_DISTANCE_KM: Final[int] = 40
 API_MIN_TOWN_DISTANCE_KM: Final[int] = 40
 API_PERIOD_24H: Final[int] = 24
