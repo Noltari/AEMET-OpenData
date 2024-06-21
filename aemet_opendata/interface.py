@@ -365,9 +365,9 @@ class AEMET:
         town[ATTR_DISTANCE] = distance
         return town
 
-    async def get_towns(self) -> dict[str, Any]:
+    async def get_towns(self, fetch_data: bool = True) -> dict[str, Any]:
         """Get information about towns."""
-        return await self.api_call("maestro/municipios")
+        return await self.api_call("maestro/municipios", fetch_data)
 
     async def select_coordinates(self, latitude: float, longitude: float) -> None:
         """Select town and station based on provided coordinates."""
