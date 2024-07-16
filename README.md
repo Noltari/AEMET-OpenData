@@ -33,7 +33,7 @@ This software is provided without warranty, according to the GNU Public Licence 
 
 ## Install
 ```bash
-pip install aioairzone-cloud
+pip install AEMET-OpenData
 ```
 
 ## Install from Source
