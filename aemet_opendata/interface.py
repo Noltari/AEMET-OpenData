@@ -417,12 +417,10 @@ class AEMET:
 
     async def update(self) -> None:
         """Update all AEMET OpenData data."""
-        tasks = [
-            self.update_daily(),
-            self.update_hourly(),
-            self.update_station(),
-        ]
-        await asyncio.gather(*tasks)
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(self.update_daily())
+            tg.create_task(self.update_hourly())
+            tg.create_task(self.update_station())
 
     def weather(self) -> dict[str, Any] | None:
         """Update AEMET OpenData town daily forecast."""
