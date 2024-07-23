@@ -125,12 +125,14 @@ API_PERIOD_QUARTER_2_DAY: Final[str] = "06-12"
 API_PERIOD_QUARTER_3_DAY: Final[str] = "12-18"
 API_PERIOD_QUARTER_4_DAY: Final[str] = "18-24"
 API_PERIOD_SPLIT: Final[int] = 2
-API_TIMEOUT: Final[int] = 15
 API_URL: Final[str] = "https://opendata.aemet.es/opendata/api"
 
 ATTR_DATA: Final[str] = "data"
 ATTR_DISTANCE: Final[str] = "distance"
 ATTR_RESPONSE: Final[str] = "response"
+
+HTTP_CALL_TIMEOUT: Final[int] = 15
+HTTP_MAX_REQUESTS: Final[int] = 3
 
 RAW_FORECAST_DAILY: Final[str] = "forecast-daily"
 RAW_FORECAST_HOURLY: Final[str] = "forecast-hourly"

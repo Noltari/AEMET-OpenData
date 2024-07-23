@@ -1,7 +1,7 @@
 """Client for the AEMET OpenData REST API."""
 
 import asyncio
-from asyncio import Lock
+from asyncio import Lock, Semaphore
 from dataclasses import dataclass
 import logging
 from typing import Any, cast
@@ -43,11 +43,12 @@ from .const import (
     AOD_WIND_SPEED_MAX,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
-    API_TIMEOUT,
     API_URL,
     ATTR_DATA,
     ATTR_DISTANCE,
     ATTR_RESPONSE,
+    HTTP_CALL_TIMEOUT,
+    HTTP_MAX_REQUESTS,
     RAW_FORECAST_DAILY,
     RAW_FORECAST_HOURLY,
     RAW_STATIONS,
@@ -82,6 +83,7 @@ class AEMET:
 
     _api_raw_data: dict[str, Any]
     _api_raw_data_lock: Lock
+    _api_semaphore: Semaphore
     aiohttp_session: ClientSession
     coords: tuple[float, float] | None
     dist_hp: bool
@@ -103,6 +105,7 @@ class AEMET:
             RAW_TOWNS: {},
         }
         self._api_raw_data_lock = Lock()
+        self._api_semaphore = Semaphore(HTTP_MAX_REQUESTS)
         self.aiohttp_session = aiohttp_session
         self.coords = None
         self.dist_hp = False
@@ -129,31 +132,33 @@ class AEMET:
         """Perform Rest API call."""
         _LOGGER.debug("api_call: cmd=%s", cmd)
 
-        try:
-            resp: ClientResponse = await self.aiohttp_session.request(
-                "GET",
-                f"{API_URL}/{cmd}",
-                timeout=API_TIMEOUT,
-                headers=self.headers,
-            )
-        except asyncio.TimeoutError as err:
-            raise AemetTimeout(err) from err
-        except ClientError as err:
-            raise AemetError(err) from err
+        async with self._api_semaphore:
+            try:
+                resp: ClientResponse = await self.aiohttp_session.request(
+                    "GET",
+                    f"{API_URL}/{cmd}",
+                    timeout=HTTP_CALL_TIMEOUT,
+                    headers=self.headers,
+                )
+            except asyncio.TimeoutError as err:
+                raise AemetTimeout(err) from err
+            except ClientError as err:
+                raise AemetError(err) from err
 
-        if resp.status == 401:
-            raise AuthError("API authentication error")
-        if resp.status == 404:
-            raise ApiError("API data error")
-        if resp.status == 429:
-            raise TooManyRequests("Too many API requests")
-        if resp.status != 200:
-            raise AemetError(f"API status={resp.status}")
+            if resp.status == 401:
+                raise AuthError("API authentication error")
+            if resp.status == 404:
+                raise ApiError("API data error")
+            if resp.status == 429:
+                raise TooManyRequests("Too many API requests")
+            if resp.status != 200:
+                raise AemetError(f"API status={resp.status}")
 
-        try:
-            resp_json = await resp.json(content_type=None)
-        except asyncio.TimeoutError as err:
-            raise AemetTimeout(err) from err
+            try:
+                resp_json = await resp.json(content_type=None)
+            except asyncio.TimeoutError as err:
+                raise AemetTimeout(err) from err
+
         _LOGGER.debug("api_call: cmd=%s resp=%s", cmd, resp_json)
 
         if isinstance(resp_json, dict):
@@ -179,28 +184,30 @@ class AEMET:
         """Fetch API data."""
         _LOGGER.debug("api_data: url=%s", url)
 
-        try:
-            resp: ClientResponse = await self.aiohttp_session.request(
-                "GET",
-                url,
-                timeout=API_TIMEOUT,
-            )
-        except asyncio.TimeoutError as err:
-            raise AemetTimeout(err) from err
-        except ClientError as err:
-            raise AemetError(err) from err
+        async with self._api_semaphore:
+            try:
+                resp: ClientResponse = await self.aiohttp_session.request(
+                    "GET",
+                    url,
+                    timeout=HTTP_CALL_TIMEOUT,
+                )
+            except asyncio.TimeoutError as err:
+                raise AemetTimeout(err) from err
+            except ClientError as err:
+                raise AemetError(err) from err
 
-        if resp.status == 404:
-            raise ApiError("API data error")
-        if resp.status == 429:
-            raise TooManyRequests("Too many API requests")
-        if resp.status != 200:
-            raise AemetError(f"API status={resp.status}")
+            if resp.status == 404:
+                raise ApiError("API data error")
+            if resp.status == 429:
+                raise TooManyRequests("Too many API requests")
+            if resp.status != 200:
+                raise AemetError(f"API status={resp.status}")
 
-        try:
-            resp_json = await resp.json(content_type=None)
-        except asyncio.TimeoutError as err:
-            raise AemetTimeout(err) from err
+            try:
+                resp_json = await resp.json(content_type=None)
+            except asyncio.TimeoutError as err:
+                raise AemetTimeout(err) from err
+
         _LOGGER.debug("api_data: url=%s resp=%s", url, resp_json)
 
         if isinstance(resp_json, dict):
