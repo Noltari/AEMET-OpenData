@@ -1,6 +1,7 @@
 """Client for the AEMET OpenData REST API."""
 
 import asyncio
+from asyncio import Lock
 from dataclasses import dataclass
 import logging
 from typing import Any, cast
@@ -80,6 +81,7 @@ class AEMET:
     """Interacts with the AEMET OpenData API."""
 
     _api_raw_data: dict[str, Any]
+    _api_raw_data_lock: Lock
     aiohttp_session: ClientSession
     coords: tuple[float, float] | None
     dist_hp: bool
@@ -100,6 +102,7 @@ class AEMET:
             RAW_STATIONS: {},
             RAW_TOWNS: {},
         }
+        self._api_raw_data_lock = Lock()
         self.aiohttp_session = aiohttp_session
         self.coords = None
         self.dist_hp = False
@@ -110,6 +113,17 @@ class AEMET:
         self.options = options
         self.station = None
         self.town = None
+
+    async def set_api_raw_data(
+        self, key: str, subkey: str | None, data: dict[str, Any] | None
+    ) -> None:
+        """Save API raw data if not empty."""
+        if data is not None:
+            async with self._api_raw_data_lock:
+                if subkey is None:
+                    self._api_raw_data[key] = data
+                else:
+                    self._api_raw_data[key][subkey] = data
 
     async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
         """Perform Rest API call."""
@@ -307,7 +321,7 @@ class AEMET:
         res = await self.api_call(
             f"observacion/convencional/datos/estacion/{station}", fetch_data
         )
-        self._api_raw_data[RAW_STATIONS][station] = res
+        await self.set_api_raw_data(RAW_STATIONS, station, res)
         return res
 
     async def get_lightnings_map(self) -> dict[str, Any]:
@@ -322,7 +336,7 @@ class AEMET:
             f"prediccion/especifica/municipio/diaria/{parse_town_code(town)}",
             fetch_data,
         )
-        self._api_raw_data[RAW_FORECAST_DAILY][town] = res
+        await self.set_api_raw_data(RAW_FORECAST_DAILY, town, res)
         return res
 
     async def get_specific_forecast_town_hourly(
@@ -333,13 +347,13 @@ class AEMET:
             f"prediccion/especifica/municipio/horaria/{parse_town_code(town)}",
             fetch_data,
         )
-        self._api_raw_data[RAW_FORECAST_HOURLY][town] = res
+        await self.set_api_raw_data(RAW_FORECAST_HOURLY, town, res)
         return res
 
     async def get_town(self, town: str) -> dict[str, Any]:
         """Get information about specific town."""
         res = await self.api_call(f"maestro/municipio/{town}")
-        self._api_raw_data[RAW_TOWNS][town] = res
+        await self.set_api_raw_data(RAW_TOWNS, town, res)
         return res
 
     async def get_town_by_coordinates(
