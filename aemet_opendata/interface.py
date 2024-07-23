@@ -418,9 +418,9 @@ class AEMET:
     async def update(self) -> None:
         """Update all AEMET OpenData data."""
         tasks = [
-            self.update_daily(),
-            self.update_hourly(),
-            self.update_station(),
+            asyncio.create_task(self.update_daily()),
+            asyncio.create_task(self.update_hourly()),
+            asyncio.create_task(self.update_station()),
         ]
         await asyncio.gather(*tasks)
 
