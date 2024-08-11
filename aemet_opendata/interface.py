@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import logging
 from typing import Any, cast
 
-from aiohttp import ClientError, ClientSession
+from aiohttp import ClientError, ClientSession, ClientTimeout
 from aiohttp.client_reqrep import ClientResponse
 import geopy.distance
 from geopy.distance import Distance
@@ -84,6 +84,7 @@ class AEMET:
     _api_raw_data: dict[str, Any]
     _api_raw_data_lock: Lock
     _api_semaphore: Semaphore
+    _api_timeout: ClientTimeout
     aiohttp_session: ClientSession
     coords: tuple[float, float] | None
     dist_hp: bool
@@ -106,6 +107,7 @@ class AEMET:
         }
         self._api_raw_data_lock = Lock()
         self._api_semaphore = Semaphore(HTTP_MAX_REQUESTS)
+        self._api_timeout = ClientTimeout(total=HTTP_CALL_TIMEOUT)
         self.aiohttp_session = aiohttp_session
         self.coords = None
         self.dist_hp = False
@@ -137,7 +139,7 @@ class AEMET:
                 resp: ClientResponse = await self.aiohttp_session.request(
                     "GET",
                     f"{API_URL}/{cmd}",
-                    timeout=HTTP_CALL_TIMEOUT,
+                    timeout=self._api_timeout,
                     headers=self.headers,
                 )
             except asyncio.TimeoutError as err:
@@ -189,7 +191,7 @@ class AEMET:
                 resp: ClientResponse = await self.aiohttp_session.request(
                     "GET",
                     url,
-                    timeout=HTTP_CALL_TIMEOUT,
+                    timeout=self._api_timeout,
                 )
             except asyncio.TimeoutError as err:
                 raise AemetTimeout(err) from err
