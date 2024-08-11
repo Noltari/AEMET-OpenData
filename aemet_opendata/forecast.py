@@ -62,6 +62,7 @@ from .const import (
     API_PERIOD_24H,
     API_PERIOD_FULL_DAY,
     API_PERIOD_HALF_2_DAY,
+    API_PERIOD_QUARTER_4_DAY,
     API_PERIOD_SPLIT,
 )
 
@@ -217,6 +218,7 @@ class DailyForecastValue(ForecastValue):
     periods: list[str] = [
         API_PERIOD_FULL_DAY,
         API_PERIOD_HALF_2_DAY,
+        API_PERIOD_QUARTER_4_DAY,
     ]
     precipitation_prob: int
     temp_max: int
