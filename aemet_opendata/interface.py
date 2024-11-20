@@ -356,9 +356,9 @@ class AEMET:
         await self.set_api_raw_data(RAW_STATIONS, station, res)
         return res
 
-    async def get_lightnings_map(self) -> dict[str, Any]:
+    async def get_lightnings_map(self, fetch_data: bool = True) -> dict[str, Any]:
         """Get map with lightning falls (last 6h)."""
-        return await self.api_call("red/rayos/mapa")
+        return await self.api_call("red/rayos/mapa", fetch_data)
 
     async def get_radar_map(
         self, region: str | None = None, fetch_data: bool = True
