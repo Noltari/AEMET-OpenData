@@ -127,9 +127,13 @@ API_PERIOD_QUARTER_4_DAY: Final[str] = "18-24"
 API_PERIOD_SPLIT: Final[int] = 2
 API_URL: Final[str] = "https://opendata.aemet.es/opendata/api"
 
+ATTR_BYTES: Final[str] = "bytes"
 ATTR_DATA: Final[str] = "data"
 ATTR_DISTANCE: Final[str] = "distance"
 ATTR_RESPONSE: Final[str] = "response"
+ATTR_TYPE: Final[str] = "type"
+
+CONTENT_TYPE_IMG: Final[str] = "image/"
 
 HTTP_CALL_TIMEOUT: Final[int] = 15
 HTTP_MAX_REQUESTS: Final[int] = 3

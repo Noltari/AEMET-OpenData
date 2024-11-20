@@ -1,4 +1,5 @@
 *.egg-info
+*.gif
 *.patch
 *.pyc
 build

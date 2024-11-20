@@ -44,9 +44,12 @@ from .const import (
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
+    ATTR_BYTES,
     ATTR_DATA,
     ATTR_DISTANCE,
     ATTR_RESPONSE,
+    ATTR_TYPE,
+    CONTENT_TYPE_IMG,
     HTTP_CALL_TIMEOUT,
     HTTP_MAX_REQUESTS,
     RAW_FORECAST_DAILY,
@@ -147,6 +150,13 @@ class AEMET:
             except ClientError as err:
                 raise AemetError(err) from err
 
+            _LOGGER.debug(
+                "api_call: cmd=%s status=%s content_type=%s",
+                cmd,
+                resp.status,
+                resp.content_type,
+            )
+
             if resp.status == 401:
                 raise AuthError("API authentication error")
             if resp.status == 404:
@@ -198,6 +208,13 @@ class AEMET:
             except ClientError as err:
                 raise AemetError(err) from err
 
+            _LOGGER.debug(
+                "api_data: url=%s status=%s content_type=%s",
+                url,
+                resp.status,
+                resp.content_type,
+            )
+
             if resp.status == 404:
                 raise ApiError("API data error")
             if resp.status == 429:
@@ -206,14 +223,20 @@ class AEMET:
                 raise AemetError(f"API status={resp.status}")
 
             try:
-                resp_json = await resp.json(content_type=None)
+                if resp.content_type.startswith(CONTENT_TYPE_IMG):
+                    resp_json = {
+                        ATTR_TYPE: resp.content_type,
+                        ATTR_BYTES: await resp.read(),
+                    }
+                else:
+                    resp_json = await resp.json(content_type=None)
             except asyncio.TimeoutError as err:
                 raise AemetTimeout(err) from err
 
         _LOGGER.debug("api_data: url=%s resp=%s", url, resp_json)
 
         if isinstance(resp_json, dict):
-            if resp_json.get(AEMET_ATTR_STATE) == 404:
+            if resp_json.get(AEMET_ATTR_STATE, 200) == 404:
                 raise ApiError("API data error")
 
         return cast(dict[str, Any], resp_json)
@@ -336,6 +359,16 @@ class AEMET:
     async def get_lightnings_map(self) -> dict[str, Any]:
         """Get map with lightning falls (last 6h)."""
         return await self.api_call("red/rayos/mapa")
+
+    async def get_radar_map(
+        self, region: str | None = None, fetch_data: bool = True
+    ) -> dict[str, Any]:
+        """Get weather radar map."""
+        if region is not None:
+            api_cmd = f"red/radar/regional/{region}"
+        else:
+            api_cmd = "red/radar/nacional"
+        return await self.api_call(api_cmd, fetch_data)
 
     async def get_specific_forecast_town_daily(
         self, town: str, fetch_data: bool = True

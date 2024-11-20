@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .const import API_ID_PFX
+from .const import API_ID_PFX, CONTENT_TYPE_IMG
 
 TZ_UTC = ZoneInfo("UTC")
 
@@ -36,6 +36,13 @@ def split_coordinate(coordinate: str) -> str:
 def parse_api_timestamp(timestamp: str, tz: ZoneInfo = TZ_UTC) -> datetime:
     """Parse AEMET OpenData timestamp into datetime."""
     return datetime.fromisoformat(timestamp).replace(tzinfo=tz)
+
+
+def parse_data_type_ext(data_type: str) -> str:
+    """Parse AEMET OpenData data type file extension."""
+    if data_type.startswith(CONTENT_TYPE_IMG):
+        return data_type.removeprefix(CONTENT_TYPE_IMG)
+    return ""
 
 
 def parse_station_coordinates(latitude: str, longitude: str) -> str:
