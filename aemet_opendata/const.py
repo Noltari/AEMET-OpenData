@@ -113,6 +113,7 @@ AOD_WIND_DIRECTION: Final[str] = "wind-direction"
 AOD_WIND_SPEED: Final[str] = "wind-speed"
 AOD_WIND_SPEED_MAX: Final[str] = "wind-speed-max"
 
+API_HDR_REQ_COUNT: Final[str] = "Remaining-request-count"
 API_ID_PFX: Final[str] = "id"
 API_MIN_STATION_DISTANCE_KM: Final[int] = 40
 API_MIN_TOWN_DISTANCE_KM: Final[int] = 40
@@ -140,6 +141,7 @@ HTTP_MAX_REQUESTS: Final[int] = 3
 
 RAW_FORECAST_DAILY: Final[str] = "forecast-daily"
 RAW_FORECAST_HOURLY: Final[str] = "forecast-hourly"
+RAW_REQ_COUNT: Final[str] = "requests-counter"
 RAW_STATIONS: Final[str] = "stations"
 RAW_TOWNS: Final[str] = "towns"
 

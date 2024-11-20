@@ -41,6 +41,7 @@ from .const import (
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
     AOD_WIND_SPEED_MAX,
+    API_HDR_REQ_COUNT,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
@@ -54,6 +55,7 @@ from .const import (
     HTTP_MAX_REQUESTS,
     RAW_FORECAST_DAILY,
     RAW_FORECAST_HOURLY,
+    RAW_REQ_COUNT,
     RAW_STATIONS,
     RAW_TOWNS,
 )
@@ -105,6 +107,7 @@ class AEMET:
         self._api_raw_data = {
             RAW_FORECAST_DAILY: {},
             RAW_FORECAST_HOURLY: {},
+            RAW_REQ_COUNT: None,
             RAW_STATIONS: {},
             RAW_TOWNS: {},
         }
@@ -122,9 +125,7 @@ class AEMET:
         self.station = None
         self.town = None
 
-    async def set_api_raw_data(
-        self, key: str, subkey: str | None, data: dict[str, Any] | None
-    ) -> None:
+    async def set_api_raw_data(self, key: str, subkey: str | None, data: Any) -> None:
         """Save API raw data if not empty."""
         if data is not None:
             async with self._api_raw_data_lock:
@@ -149,6 +150,10 @@ class AEMET:
                 raise AemetTimeout(err) from err
             except ClientError as err:
                 raise AemetError(err) from err
+
+            req_count = resp.headers.get(API_HDR_REQ_COUNT)
+            if req_count is not None:
+                await self.set_api_raw_data(RAW_REQ_COUNT, None, req_count)
 
             _LOGGER.debug(
                 "api_call: cmd=%s status=%s content_type=%s",
@@ -207,6 +212,10 @@ class AEMET:
                 raise AemetTimeout(err) from err
             except ClientError as err:
                 raise AemetError(err) from err
+
+            req_count = resp.headers.get(API_HDR_REQ_COUNT)
+            if req_count is not None:
+                await self.set_api_raw_data(RAW_REQ_COUNT, None, req_count)
 
             _LOGGER.debug(
                 "api_data: url=%s status=%s content_type=%s",
