@@ -148,6 +148,7 @@ class AEMET:
             "Cache-Control": "no-cache",
             "api_key": options.api_key,
         }
+        self.loop = asyncio.get_running_loop()
         self.options = options
         self.station = None
         self.town = None
@@ -236,16 +237,16 @@ class AEMET:
         try:
             json_data = await self._api_call(cmd, fetch_data)
         except AemetError as err:
-            json_data = self.api_call_load(cmd)
+            json_data = await self.api_call_load(cmd)
             if json_data is None:
                 raise err
             _LOGGER.error(err)
         else:
-            self.api_call_save(cmd, json_data)
+            await self.api_call_save(cmd, json_data)
 
         return json_data
 
-    def api_call_load(self, cmd: str) -> dict[str, Any] | None:
+    async def api_call_load(self, cmd: str) -> dict[str, Any] | None:
         """Load API call from file."""
         json_data: dict[str, Any] | None = None
 
@@ -265,10 +266,8 @@ class AEMET:
 
         _LOGGER.info('Loading cmd=%s from "%s"...', cmd, file_name)
 
-        with open(file_path, "r", encoding="utf-8") as file:
-            file_data = file.read()
-            json_data = json.loads(file_data)
-            file.close()
+        file_bytes = await self.api_file_read(file_path)
+        json_data = json.loads(file_bytes)
 
         json_data = cast(dict[str, Any], json_data)
 
@@ -291,16 +290,15 @@ class AEMET:
 
         return json_data
 
-    def api_call_save(self, cmd: str, json_data: dict[str, Any]) -> None:
+    async def api_call_save(self, cmd: str, json_data: dict[str, Any]) -> None:
         """Save API call to file."""
         if self._api_data_dir is None:
             return
 
         file_name = slugify(cmd) + API_CALL_FILE_EXTENSION
         file_path = os.path.join(self._api_data_dir, file_name)
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(json.dumps(json_data, cls=BytesEncoder))
-            file.close()
+        file_data = json.dumps(json_data, cls=BytesEncoder)
+        await self.api_file_write(file_path, file_data)
 
     async def api_data(self, url: str) -> Any:
         """Fetch API data."""
@@ -354,6 +352,27 @@ class AEMET:
                 raise ApiError("API data error")
 
         return resp_json
+
+    def _api_file_read(self, file_path: str) -> str:
+        """Read API file."""
+        with open(file_path, "r", encoding="utf-8") as file:
+            file_data = file.read()
+        return file_data
+
+    async def api_file_read(self, file_path: str) -> str:
+        """Read API file."""
+        return await self.loop.run_in_executor(None, self._api_file_read, file_path)
+
+    def _api_file_write(self, file_path: str, file_data: str) -> None:
+        """Write API file."""
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(file_data)
+
+    async def api_file_write(self, file_path: str, file_data: str) -> None:
+        """Write API file."""
+        return await self.loop.run_in_executor(
+            None, self._api_file_write, file_path, file_data
+        )
 
     def raw_data(self) -> dict[str, Any]:
         """Return raw AEMET OpenData API data."""
