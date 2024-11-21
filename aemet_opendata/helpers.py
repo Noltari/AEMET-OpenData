@@ -37,7 +37,7 @@ def get_current_datetime(tz: ZoneInfo = TZ_UTC, replace: bool = True) -> datetim
     """Return current datetime in UTC."""
     cur_dt = datetime.now(tz=tz)
     if replace:
-        cur_dt.replace(minute=0, second=0, microsecond=0)
+        cur_dt = cur_dt.replace(minute=0, second=0, microsecond=0)
     return cur_dt
 
 
