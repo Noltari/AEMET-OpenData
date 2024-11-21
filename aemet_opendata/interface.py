@@ -197,7 +197,7 @@ class AEMET:
 
         return json_response
 
-    async def api_data(self, url: str) -> dict[str, Any]:
+    async def api_data(self, url: str) -> Any:
         """Fetch API data."""
         _LOGGER.debug("api_data: url=%s", url)
 
@@ -248,7 +248,7 @@ class AEMET:
             if resp_json.get(AEMET_ATTR_STATE, 200) == 404:
                 raise ApiError("API data error")
 
-        return cast(dict[str, Any], resp_json)
+        return resp_json
 
     def raw_data(self) -> dict[str, Any]:
         """Return raw AEMET OpenData API data."""
