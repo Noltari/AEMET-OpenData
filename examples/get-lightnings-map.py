@@ -3,7 +3,7 @@
 import asyncio
 import timeit
 
-from _secrets import AEMET_OPTIONS
+from _secrets import AEMET_DATA_DIR, AEMET_OPTIONS
 import aiohttp
 
 from aemet_opendata.const import ATTR_BYTES, ATTR_DATA, ATTR_TYPE
@@ -17,6 +17,8 @@ async def main():
 
     async with aiohttp.ClientSession() as aiohttp_session:
         client = AEMET(aiohttp_session, AEMET_OPTIONS)
+
+        client.set_api_data_dir(AEMET_DATA_DIR)
 
         try:
             api_start = timeit.default_timer()

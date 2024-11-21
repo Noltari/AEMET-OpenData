@@ -113,6 +113,8 @@ AOD_WIND_DIRECTION: Final[str] = "wind-direction"
 AOD_WIND_SPEED: Final[str] = "wind-speed"
 AOD_WIND_SPEED_MAX: Final[str] = "wind-speed-max"
 
+API_CALL_FILE_EXTENSION: Final[str] = ".json"
+API_CALL_DATA_TIMEOUT_DEF: Final[timedelta] = timedelta(hours=1)
 API_HDR_REQ_COUNT: Final[str] = "Remaining-request-count"
 API_ID_PFX: Final[str] = "id"
 API_MIN_STATION_DISTANCE_KM: Final[int] = 40
@@ -132,6 +134,7 @@ ATTR_BYTES: Final[str] = "bytes"
 ATTR_DATA: Final[str] = "data"
 ATTR_DISTANCE: Final[str] = "distance"
 ATTR_RESPONSE: Final[str] = "response"
+ATTR_TIMESTAMP: Final[str] = "timestamp"
 ATTR_TYPE: Final[str] = "type"
 
 CONTENT_TYPE_IMG: Final[str] = "image/"

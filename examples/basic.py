@@ -4,7 +4,7 @@ import asyncio
 import timeit
 
 from _common import json_dumps
-from _secrets import AEMET_COORDS, AEMET_OPTIONS
+from _secrets import AEMET_COORDS, AEMET_DATA_DIR, AEMET_OPTIONS
 import aiohttp
 
 from aemet_opendata.exceptions import ApiError, AuthError, TooManyRequests, TownNotFound
@@ -16,6 +16,8 @@ async def main():
 
     async with aiohttp.ClientSession() as aiohttp_session:
         client = AEMET(aiohttp_session, AEMET_OPTIONS)
+
+        client.set_api_data_dir(AEMET_DATA_DIR)
 
         try:
             select_start = timeit.default_timer()

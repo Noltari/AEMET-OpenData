@@ -2,9 +2,13 @@
 
 import asyncio
 from asyncio import Lock, Semaphore
+import base64
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+import json
 import logging
-from typing import Any, cast
+import os
+from typing import Any, Final, cast
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
 from aiohttp.client_reqrep import ClientResponse
@@ -41,6 +45,8 @@ from .const import (
     AOD_WIND_DIRECTION,
     AOD_WIND_SPEED,
     AOD_WIND_SPEED_MAX,
+    API_CALL_DATA_TIMEOUT_DEF,
+    API_CALL_FILE_EXTENSION,
     API_HDR_REQ_COUNT,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
@@ -49,6 +55,7 @@ from .const import (
     ATTR_DATA,
     ATTR_DISTANCE,
     ATTR_RESPONSE,
+    ATTR_TIMESTAMP,
     ATTR_TYPE,
     CONTENT_TYPE_IMG,
     HTTP_CALL_TIMEOUT,
@@ -68,11 +75,29 @@ from .exceptions import (
     TooManyRequests,
     TownNotFound,
 )
-from .helpers import get_current_datetime, parse_station_coordinates, parse_town_code
+from .helpers import (
+    BytesEncoder,
+    get_current_datetime,
+    parse_api_timestamp,
+    parse_station_coordinates,
+    parse_town_code,
+    slugify,
+)
 from .station import Station
 from .town import Town
 
 _LOGGER = logging.getLogger(__name__)
+
+
+API_CALL_DATA_TIMEOUT: Final[dict[str, timedelta]] = {
+    "maestro/municipios": timedelta(days=15),
+    "prediccion/especifica/municipio/diaria": timedelta(days=3),
+    "prediccion/especifica/municipio/horaria": timedelta(hours=48),
+    "observacion/convencional/datos/estacion": timedelta(hours=2),
+    "observacion/convencional/todas": timedelta(days=15),
+    "red/radar/nacional": timedelta(hours=6),
+    "red/rayos/mapa": timedelta(hours=6),
+}
 
 
 @dataclass
@@ -86,6 +111,7 @@ class ConnectionOptions:
 class AEMET:
     """Interacts with the AEMET OpenData API."""
 
+    _api_data_dir: str | None
     _api_raw_data: dict[str, Any]
     _api_raw_data_lock: Lock
     _api_semaphore: Semaphore
@@ -104,6 +130,7 @@ class AEMET:
         options: ConnectionOptions,
     ) -> None:
         """Init AEMET OpenData API."""
+        self._api_data_dir = None
         self._api_raw_data = {
             RAW_FORECAST_DAILY: {},
             RAW_FORECAST_HOURLY: {},
@@ -125,6 +152,12 @@ class AEMET:
         self.station = None
         self.town = None
 
+    def set_api_data_dir(self, data_dir: str) -> None:
+        """Set API data directory."""
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        self._api_data_dir = data_dir
+
     async def set_api_raw_data(self, key: str, subkey: str | None, data: Any) -> None:
         """Save API raw data if not empty."""
         if data is not None:
@@ -134,7 +167,7 @@ class AEMET:
                 else:
                     self._api_raw_data[key][subkey] = data
 
-    async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
+    async def _api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
         """Perform Rest API call."""
         _LOGGER.debug("api_call: cmd=%s", cmd)
 
@@ -150,6 +183,8 @@ class AEMET:
                 raise AemetTimeout(err) from err
             except ClientError as err:
                 raise AemetError(err) from err
+
+            cur_dt = get_current_datetime(replace=False)
 
             req_count = resp.headers.get(API_HDR_REQ_COUNT)
             if req_count is not None:
@@ -185,17 +220,87 @@ class AEMET:
         json_response = cast(dict[str, Any], resp_json)
         if fetch_data and AEMET_ATTR_DATA in json_response:
             data = await self.api_data(json_response[AEMET_ATTR_DATA])
-            if data:
-                json_response = {
-                    ATTR_RESPONSE: json_response,
-                    ATTR_DATA: data,
-                }
-        if isinstance(json_response, list):
             json_response = {
-                ATTR_DATA: json_response,
+                ATTR_RESPONSE: json_response,
+                ATTR_DATA: data,
             }
 
+        json_response[ATTR_TIMESTAMP] = cur_dt.isoformat()
+
         return json_response
+
+    async def api_call(self, cmd: str, fetch_data: bool = False) -> dict[str, Any]:
+        """Provide data from API or file."""
+        json_data: dict[str, Any] | None
+
+        try:
+            json_data = await self._api_call(cmd, fetch_data)
+        except AemetError as err:
+            json_data = self.api_call_load(cmd)
+            if json_data is None:
+                raise err
+            _LOGGER.error(err)
+        else:
+            self.api_call_save(cmd, json_data)
+
+        return json_data
+
+    def api_call_load(self, cmd: str) -> dict[str, Any] | None:
+        """Load API call from file."""
+        json_data: dict[str, Any] | None = None
+
+        if self._api_data_dir is None:
+            return None
+
+        file_name = slugify(cmd) + API_CALL_FILE_EXTENSION
+        file_path = os.path.join(self._api_data_dir, file_name)
+        if not os.path.isfile(file_path):
+            return None
+
+        data_timeout = API_CALL_DATA_TIMEOUT_DEF
+        for key, val in API_CALL_DATA_TIMEOUT.items():
+            if cmd.startswith(key):
+                data_timeout = val
+                break
+
+        _LOGGER.info('Loading cmd=%s from "%s"...', cmd, file_name)
+
+        with open(file_path, "r", encoding="utf-8") as file:
+            file_data = file.read()
+            json_data = json.loads(file_data)
+            file.close()
+
+        json_data = cast(dict[str, Any], json_data)
+
+        file_isotime = json_data.get(ATTR_TIMESTAMP)
+        if file_isotime is not None:
+            file_datetime = parse_api_timestamp(file_isotime)
+        else:
+            file_mtime = os.path.getmtime(file_path)
+            file_datetime = datetime.fromtimestamp(file_mtime, tz=timezone.utc)
+
+        cur_datetime = get_current_datetime(replace=False)
+        if cur_datetime - file_datetime > data_timeout:
+            return None
+
+        json_attr_data = json_data.get(ATTR_DATA, {})
+        if isinstance(json_attr_data, dict):
+            json_bytes = json_attr_data.get(ATTR_BYTES)
+            if json_bytes is not None:
+                json_data[ATTR_DATA][ATTR_BYTES] = base64.b64decode(json_bytes)
+
+        return json_data
+
+    def api_call_save(self, cmd: str, json_data: dict[str, Any]) -> None:
+        """Save API call to file."""
+        if self._api_data_dir is None:
+            return
+
+        file_name = slugify(cmd) + API_CALL_FILE_EXTENSION
+        file_path = os.path.join(self._api_data_dir, file_name)
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(json.dumps(json_data, cls=BytesEncoder))
+            file.close()
 
     async def api_data(self, url: str) -> Any:
         """Fetch API data."""

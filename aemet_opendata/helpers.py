@@ -1,12 +1,26 @@
 """AEMET OpenData Helpers."""
 
+import base64
 from datetime import datetime
+import json
+import re
 from typing import Any
+import unicodedata
 from zoneinfo import ZoneInfo
 
 from .const import API_ID_PFX, CONTENT_TYPE_IMG
 
 TZ_UTC = ZoneInfo("UTC")
+
+
+class BytesEncoder(json.JSONEncoder):
+    """JSON Bytes Encoder class."""
+
+    def default(self, o: Any) -> Any:
+        """JSON default encoder function."""
+        if isinstance(o, bytes):
+            return base64.b64encode(o).decode("utf-8")
+        return super().default(o)
 
 
 def dict_nested_value(data: dict[str, Any] | None, keys: list[str] | None) -> Any:
@@ -19,9 +33,12 @@ def dict_nested_value(data: dict[str, Any] | None, keys: list[str] | None) -> An
     return data
 
 
-def get_current_datetime(tz: ZoneInfo = TZ_UTC) -> datetime:
+def get_current_datetime(tz: ZoneInfo = TZ_UTC, replace: bool = True) -> datetime:
     """Return current datetime in UTC."""
-    return datetime.now(tz=tz).replace(minute=0, second=0, microsecond=0)
+    cur_dt = datetime.now(tz=tz)
+    if replace:
+        cur_dt.replace(minute=0, second=0, microsecond=0)
+    return cur_dt
 
 
 def split_coordinate(coordinate: str) -> str:
@@ -55,6 +72,20 @@ def parse_town_code(town_id: str) -> str:
     if isinstance(town_id, str) and town_id.startswith(API_ID_PFX):
         return town_id[len(API_ID_PFX) :]
     return town_id
+
+
+def slugify(value: str, allow_unicode: bool = False) -> str:
+    """Convert string to a valid file name."""
+    if allow_unicode:
+        value = unicodedata.normalize("NFKC", value)
+    else:
+        value = (
+            unicodedata.normalize("NFKD", value)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+    value = re.sub(r"[^\w\s]", "-", value.lower())
+    return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
 def timezone_from_coords(coords: tuple[float, float]) -> ZoneInfo:
