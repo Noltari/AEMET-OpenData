@@ -5,6 +5,7 @@ from asyncio import Lock, Semaphore
 import base64
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from enum import IntEnum
 import json
 import logging
 import os
@@ -31,6 +32,7 @@ from .const import (
     AOD_PRECIPITATION,
     AOD_PRECIPITATION_PROBABILITY,
     AOD_PRESSURE,
+    AOD_RADAR,
     AOD_RAIN,
     AOD_RAIN_PROBABILITY,
     AOD_SNOW,
@@ -83,6 +85,7 @@ from .helpers import (
     parse_town_code,
     slugify,
 )
+from .radar import Radar
 from .station import Station
 from .town import Town
 
@@ -100,12 +103,20 @@ API_CALL_DATA_TIMEOUT: Final[dict[str, timedelta]] = {
 }
 
 
+class UpdateFeature(IntEnum):
+    """Enabled features of the AEMET OpenData API."""
+
+    FORECAST = 0
+    STATION = 1
+    RADAR = 2
+
+
 @dataclass
 class ConnectionOptions:
     """AEMET OpenData API options for connection."""
 
     api_key: str
-    station_data: bool = False
+    update_features: int = UpdateFeature.FORECAST
 
 
 class AEMET:
@@ -121,6 +132,7 @@ class AEMET:
     dist_hp: bool
     headers: dict[str, Any]
     options: ConnectionOptions
+    radar: Radar | None
     station: Station | None
     town: Town | None
 
@@ -150,6 +162,7 @@ class AEMET:
         }
         self.loop = asyncio.get_running_loop()
         self.options = options
+        self.radar = None
         self.station = None
         self.town = None
 
@@ -382,6 +395,9 @@ class AEMET:
         """Return AEMET OpenData data."""
         data: dict[str, Any] = {}
 
+        if self.radar is not None:
+            data[AOD_RADAR] = self.radar.data()
+
         if self.station is not None:
             data[AOD_STATION] = self.station.data()
 
@@ -562,7 +578,7 @@ class AEMET:
         """Select town and station based on provided coordinates."""
         coords = (latitude, longitude)
 
-        if self.options.station_data:
+        if self.update_feature(UpdateFeature.STATION):
             try:
                 station_data = (
                     await self.get_conventional_observation_station_by_coordinates(
@@ -597,18 +613,37 @@ class AEMET:
             hourly = await self.get_specific_forecast_town_hourly(town_id)
             self.town.update_hourly(hourly)
 
+    async def update_radar(self) -> None:
+        """Update AEMET OpenData radar."""
+        if not self.update_feature(UpdateFeature.RADAR):
+            return None
+
+        radar_map = await self.get_radar_map()
+        if self.radar is None:
+            self.radar = Radar("national", radar_map)
+        else:
+            self.radar.update(radar_map)
+
     async def update_station(self) -> None:
         """Update AEMET OpenData station."""
+        if not self.update_feature(UpdateFeature.STATION):
+            return None
+
         if self.station is not None:
             station_id = self.station.get_id()
             station = await self.get_conventional_observation_station_data(station_id)
             self.station.update_samples(station)
+
+    def update_feature(self, feature: int) -> bool:
+        """Get update feature."""
+        return bool(self.options.update_features & feature)
 
     async def update(self) -> None:
         """Update all AEMET OpenData data."""
         tasks = [
             asyncio.create_task(self.update_daily()),
             asyncio.create_task(self.update_hourly()),
+            asyncio.create_task(self.update_radar()),
             asyncio.create_task(self.update_station()),
         ]
         await asyncio.gather(*tasks)
