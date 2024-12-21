@@ -168,8 +168,7 @@ class AEMET:
 
     def set_api_data_dir(self, data_dir: str) -> None:
         """Set API data directory."""
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
+        os.makedirs(data_dir, exist_ok=True)
         self._api_data_dir = data_dir
 
     async def set_api_raw_data(self, key: str, subkey: str | None, data: Any) -> None:
