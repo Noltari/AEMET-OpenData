@@ -29,7 +29,7 @@ I have no connection with AEMET. I receive no help (financial or otherwise) from
 This software is provided without warranty, according to the GNU Public Licence version 2, and should therefore not be used where it may endanger life, financial stakes, or cause discomfort and inconvenience to others.
 
 ## Requirements
-- Python >= 3.11
+- Python >= 3.12
 
 ## Install
 ```bash

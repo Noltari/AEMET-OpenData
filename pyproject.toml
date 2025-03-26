@@ -3,7 +3,7 @@ name = "AEMET-OpenData"
 version = "0.6.4"
 description = "AEMET OpenData Rest API library"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {text = "GPL-2.0-only"}
 keywords = ["AEMET", "weather", "forecast", "home"] 
 authors = [
@@ -14,7 +14,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Home Automation",
@@ -29,14 +28,14 @@ dependencies = [
 "Bug Tracker" = "https://github.com/Noltari/AEMET-OpenData/issues"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 
 [[tool.mypy.overrides]]
 module = "geopy.*"
 ignore_missing_imports = true
 
 [tool.pylint.MAIN]
-py-version = "3.11"
+py-version = "3.12"
 
 [tool.pylint.BASIC]
 class-const-naming-style = "any"
