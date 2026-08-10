@@ -339,6 +339,13 @@ class AEMET:
                 resp.content_type,
             )
 
+            if resp.status == 401:
+                # Without this, a 401 on the second-stage `datos` fetch becomes a
+                # bare AemetError, which update_radar()/update_station() now
+                # swallow. That would hollow out the guarantee that an expired or
+                # revoked key always fails the update instead of degrading
+                # silently. _api_call() already maps 401 this way.
+                raise AuthError("API authentication error")
             if resp.status == 404:
                 raise ApiError("API data error")
             if resp.status == 429:
@@ -617,7 +624,27 @@ class AEMET:
         if not self.update_feature(UpdateFeature.RADAR):
             return None
 
-        radar_map = await self.get_radar_map()
+        try:
+            radar_map = await self.get_radar_map()
+        except AuthError, TooManyRequests:
+            # Not radar-specific: these affect every dataset, so the whole
+            # update must still fail rather than report success with data
+            # missing.
+            raise
+        except AemetError as err:
+            # Radar is an opt-in extra, so AEMET failing to provide it must not
+            # fail the whole update: update() gathers this with the forecast and
+            # station tasks, so the exception propagates out of gather() and the
+            # caller discards an otherwise complete cycle.
+            #
+            # Note that if the FIRST radar fetch fails, self.radar stays None and
+            # data() omits AOD_RADAR entirely, so a consumer that enumerates
+            # entities once (as Home Assistant does at setup) will not create a
+            # radar entity until it is reloaded. That is deliberate: an empty
+            # Radar would produce a broken entity instead of no entity.
+            _LOGGER.warning("Radar update failed: %s", err)
+            return None
+
         if self.radar is None:
             self.radar = Radar("national", radar_map)
         else:
@@ -630,7 +657,24 @@ class AEMET:
 
         if self.station is not None:
             station_id = self.station.get_id()
-            station = await self.get_conventional_observation_station_data(station_id)
+            try:
+                station = await self.get_conventional_observation_station_data(
+                    station_id
+                )
+            except AuthError, TooManyRequests:
+                # Not station-specific; see update_radar(). Do not remove: this
+                # clause is what keeps a revoked key or a rate-limited account
+                # failing the update instead of being swallowed below.
+                raise
+            except AemetError as err:
+                # Same reasoning as update_radar(): station is opt-in too, and a
+                # station that is decommissioned or temporarily not reporting
+                # must not take the forecast down with it. weather() already
+                # falls back to forecast values when Station.get_outdated() is
+                # true, though note data() still exports the stale sample with
+                # only the advisory AOD_OUTDATED flag.
+                _LOGGER.warning("Station update failed: %s", err)
+                return None
             self.station.update_samples(station)
 
     def update_feature(self, feature: int) -> bool:
