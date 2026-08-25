@@ -49,7 +49,6 @@ from .const import (
     AOD_WIND_SPEED_MAX,
     API_CALL_DATA_TIMEOUT_DEF,
     API_CALL_FILE_EXTENSION,
-    API_HDR_REQ_COUNT,
     API_MIN_STATION_DISTANCE_KM,
     API_MIN_TOWN_DISTANCE_KM,
     API_URL,
@@ -79,6 +78,7 @@ from .exceptions import (
 )
 from .helpers import (
     BytesEncoder,
+    api_req_count,
     get_current_datetime,
     parse_api_timestamp,
     parse_station_coordinates,
@@ -199,7 +199,7 @@ class AEMET:
 
             cur_dt = get_current_datetime(replace=False)
 
-            req_count = resp.headers.get(API_HDR_REQ_COUNT)
+            req_count = api_req_count(resp.headers)
             if req_count is not None:
                 await self.set_api_raw_data(RAW_REQ_COUNT, None, req_count)
 
@@ -328,7 +328,7 @@ class AEMET:
             except ClientError as err:
                 raise AemetError(err) from err
 
-            req_count = resp.headers.get(API_HDR_REQ_COUNT)
+            req_count = api_req_count(resp.headers)
             if req_count is not None:
                 await self.set_api_raw_data(RAW_REQ_COUNT, None, req_count)
 

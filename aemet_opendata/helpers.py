@@ -1,6 +1,7 @@
 """AEMET OpenData Helpers."""
 
 import base64
+from collections.abc import Mapping
 from datetime import datetime
 import json
 import re
@@ -8,7 +9,7 @@ from typing import Any
 import unicodedata
 from zoneinfo import ZoneInfo
 
-from .const import API_ID_PFX, CONTENT_TYPE_IMG
+from .const import API_HDR_REQ_COUNT, API_ID_PFX, CONTENT_TYPE_IMG
 
 TZ_UTC = ZoneInfo("UTC")
 
@@ -21,6 +22,15 @@ class BytesEncoder(json.JSONEncoder):
         if isinstance(o, bytes):
             return base64.b64encode(o).decode("utf-8")
         return super().default(o)
+
+
+def api_req_count(headers: Mapping[str, str]) -> str | None:
+    """Get remaining API requests from response headers."""
+    for header in API_HDR_REQ_COUNT:
+        req_count = headers.get(header)
+        if req_count is not None:
+            return req_count
+    return None
 
 
 def dict_nested_value(data: dict[str, Any] | None, keys: list[str] | None) -> Any:
