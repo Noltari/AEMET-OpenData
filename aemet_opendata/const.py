@@ -118,7 +118,10 @@ AOD_WIND_SPEED_MAX: Final[str] = "wind-speed-max"
 
 API_CALL_FILE_EXTENSION: Final[str] = ".json"
 API_CALL_DATA_TIMEOUT_DEF: Final[timedelta] = timedelta(hours=1)
-API_HDR_REQ_COUNT: Final[str] = "Remaining-request-count"
+API_HDR_REQ_COUNT: Final[tuple[str, ...]] = (
+    "Remaining-request-endpoint",
+    "Remaining-request-count",
+)
 API_ID_PFX: Final[str] = "id"
 API_MIN_STATION_DISTANCE_KM: Final[int] = 40
 API_MIN_TOWN_DISTANCE_KM: Final[int] = 40
