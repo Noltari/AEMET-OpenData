@@ -229,6 +229,8 @@ class AEMET:
         if isinstance(resp_json, dict):
             if resp_json.get(AEMET_ATTR_STATE) == 404:
                 raise ApiError("API data error")
+        else:
+            raise ApiError(f"API returned unusable data (cmd={cmd}, resp={resp})")
 
         json_response = cast(dict[str, Any], resp_json)
         if fetch_data and AEMET_ATTR_DATA in json_response:
